@@ -11,10 +11,11 @@ export const orthogonalBasis:{ line:Line.Types.T_Line3D; color:Color.RGB.Types.T
 	{ line: [[0,0,0], [0,0,1]], color: { red:   0, green:   0, blue: 255 } },
 ];
 
-export const eventMetrics:Types.T_EventsResult =
+export const DEFAULT_EVENT_METRICS:Types.T_EventsResult =
 {
-	zoom     : 50,
-	xRotation: 0,
-	yRotation: 0,
-	zRotation: 0,
+	zoom      : 50,
+	xRotation : 0,
+	yRotation : 0,
+	zRotation : 0,
+	projection: "xy",
 };

@@ -38,13 +38,23 @@ function DrawOnCanvas(points:Point.Types.T_ArrayLike2D[], context:CanvasRenderin
 
 export function RenderFrame(context:CanvasRenderingContext2D, polygones:Polygone.Types.T_Polygone3D[], option?:Types.T_EventsResult):void
 {
-	const zoom:number = (option?.zoom) ? option.zoom : 50;
+	let eventsResult:Types.T_EventsResult = (option) ? option : {...Variables.DEFAULT_EVENT_METRICS};       
+	let cameraProjectionMatrix;
 
-	const cameraProjectionMatrix:Types.T_Matrix_2_3        = Utils.GenerateProjectionMatrixXY(zoom);
-	const projectedPolygones:Polygone.Types.T_Polygone2D[] = Utils.ProjectWorldView_ToCameraView(cameraProjectionMatrix, polygones);
+	if      (eventsResult.projection === "xy") cameraProjectionMatrix = Utils.GenerateProjectionMatrixXY();
+	else if (eventsResult.projection === "yz") cameraProjectionMatrix = Utils.GenerateProjectionMatrixYZ();
+	else if (eventsResult.projection === "xz") cameraProjectionMatrix = Utils.GenerateProjectionMatrixXZ();
+	else                                       return (eventsResult.projection);
 
 	DrawOnCanvas(
-		projectedPolygones
+		Utils.ProjectWorldView_ToCameraView(
+			cameraProjectionMatrix,
+			Utils.MoveCamera(
+				polygones,
+				eventsResult.zoom,
+				Utils.GenerateRotationMatrix(eventsResult.xRotation, eventsResult.yRotation, eventsResult.zRotation)
+			),
+		)
 		.map((polygone:Polygone.Types.T_Polygone2D):Point.Types.T_ArrayLike2D[]         => { return (Polygone.Utils.GetPolygonePoints(polygone)); })
 		.reduce((prev:Point.Types.T_ArrayLike2D[], current:Point.Types.T_ArrayLike2D[]) => { return ([...prev, ...current]); }, []),
 		context
@@ -55,12 +65,12 @@ export function RenderFrame(context:CanvasRenderingContext2D, polygones:Polygone
 export const Component = ():JSX.Element =>
 {
 	const modelMesh = React.useRef<Polygone.Types.T_Polygone3D[]>([]);
-	const eventMetrics = React.useRef<Types.T_EventsResult>({ ...Variables.eventMetrics });
+	const eventMetrics = React.useRef<Types.T_EventsResult>({ ...Variables.DEFAULT_EVENT_METRICS });
 
 	const canvasRef:React.RefObject<HTMLCanvasElement> = Hooks.useCanvas.Hook(
 		{
 			drawFrame   : RenderFrame,
-			isRefreshing: true,
+			isRefreshing: false,
 			content     : modelMesh,
 			option      : eventMetrics,
 		}
@@ -68,16 +78,11 @@ export const Component = ():JSX.Element =>
 
 	React.useEffect(() =>
 	{
-		if (canvasRef.current)
-		{
-			canvasRef.current.addEventListener("wheel", OnScroll);
-		}
+		AddEvents(canvasRef);
 
-		return (() =>
-		{
-			canvasRef.current?.removeEventListener("wheel", OnScroll);
-		})
+		return (() => { RemoveEvents(canvasRef); });
 	}, []);
+
 
 	function ReadOBJFile(file:File):void
 	{
@@ -93,7 +98,49 @@ export const Component = ():JSX.Element =>
 		};	
 	};
 
-	function OnScroll(e:WheelEvent):void { eventMetrics.current.zoom += e.clientY; };
+	function AddEvents(elemRef:React.RefObject<HTMLCanvasElement>):void
+	{
+		if (elemRef.current)
+		{
+			elemRef.current.addEventListener("wheel"  , OnScroll );
+			document       .addEventListener("keydown", OnKeydown);
+		}
+	};
+
+	function RemoveEvents(elemRef:React.RefObject<HTMLCanvasElement>):void
+	{
+		if (elemRef.current)
+		{
+			elemRef.current.removeEventListener("wheel"  , OnScroll );
+			document       .removeEventListener("keydown", OnKeydown);
+		}
+	};
+
+	function OnScroll(e:WheelEvent):void
+	{
+		const zoomSteps:number = 2;
+
+		e.preventDefault();
+
+		if (e.deltaY < 0)
+		{
+			if (eventMetrics.current.zoom >= 10)
+				eventMetrics.current.zoom -= zoomSteps;
+		}
+		else
+			eventMetrics.current.zoom += zoomSteps; 
+	};
+
+	function OnKeydown(e:KeyboardEvent):void
+	{
+		function ProjectOnXY():void { eventMetrics.current.projection = "xy"; };
+		function ProjectOnXZ():void { eventMetrics.current.projection = "xz"; };
+		function ProjectOnYZ():void { eventMetrics.current.projection = "yz"; };
+
+		if      (e.key === 'a') ProjectOnXY();
+		else if (e.key === 'b') ProjectOnXZ();
+		else if (e.key === 'c') ProjectOnYZ();
+	};
 
 	return (
 		<>

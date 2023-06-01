@@ -5,6 +5,24 @@ import * as Polygone from "eraz-lib/build/Graphic/Polygone";
 import * as Types    from "./types";
 
 
+function IsMatrix_2_2(matrix:Types.T_Matrix):matrix is Types.T_Matrix_2_2
+{
+	return (matrix.length === 2 && matrix[0].length === 2 && matrix[1].length === 2);
+};
+function IsMatrix_2_3(matrix:Types.T_Matrix):matrix is Types.T_Matrix_2_3
+{
+	return (matrix.length === 2 && matrix[0].length === 3 && matrix[1].length === 3);
+};
+function IsMatrix_3_3(matrix:Types.T_Matrix):matrix is Types.T_Matrix_3_3
+{
+	return (matrix.length === 3);
+};
+function IsMatrix_4_4(matrix:Types.T_Matrix):matrix is Types.T_Matrix_4_4
+{
+	return (matrix.length === 4);
+};
+
+
 function FillPixelBuffer_PointAsObj(
 	buffer:Uint8ClampedArray,
 	context:CanvasRenderingContext2D,
@@ -170,14 +188,54 @@ export function ParseOBJFile(fileContent:string):Polygone.Types.T_Polygone3D[]
 };
 
 
-export function GenerateProjectionMatrixXY(zoom:number):Types.T_Matrix_2_3
+export function GenerateProjectionMatrixXY():Types.T_Matrix_2_3 { return ([[1,0,0],[0,1,0]]); };
+export function GenerateProjectionMatrixXZ():Types.T_Matrix_2_3 { return ([[1,0,0],[0,0,1]]); };
+export function GenerateProjectionMatrixYZ():Types.T_Matrix_2_3 { return ([[0,1,0],[0,0,1]]); };
+
+
+function ApplyTransformation_2_3__3_1(matrix:Types.T_Matrix_2_3, point:Point.Types.T_Point3D):Point.Types.T_Point2D
 {
-	return ([[zoom,0,0],[0,zoom,0]]);
+	const originalPointX:number = Point.Utils.GetX(point);
+	const originalPointY:number = Point.Utils.GetY(point);
+	const originalPointZ:number = Point.Utils.GetZ(point);
+
+	const newPointX:number = (matrix[0][0] * originalPointX) + (matrix[0][1] * originalPointY) + (matrix[0][2] * originalPointZ);
+	const newPointY:number = (matrix[1][0] * originalPointX) + (matrix[1][1] * originalPointY) + (matrix[1][2] * originalPointZ);
+
+	return ([newPointX,newPointY]);
 };
-export function ProjectWorldView_ToCameraView(
-	matrix:Types.T_Matrix_2_3,
-	polygones:Polygone.Types.T_Polygone3D[],
-):Polygone.Types.T_Polygone2D[]
+function ApplyTransformation_3_3__3_1(matrix:Types.T_Matrix_3_3, point:Point.Types.T_Point3D):Point.Types.T_Point3D
+{
+	const originalPointX:number = Point.Utils.GetX(point);
+	const originalPointY:number = Point.Utils.GetY(point);
+	const originalPointZ:number = Point.Utils.GetZ(point);
+
+	const newPointX:number = (matrix[0][0] * originalPointX) + (matrix[0][1] * originalPointY) + (matrix[0][2] * originalPointZ);
+	const newPointY:number = (matrix[1][0] * originalPointX) + (matrix[1][1] * originalPointY) + (matrix[1][2] * originalPointZ);
+	const newPointZ:number = (matrix[2][0] * originalPointX) + (matrix[2][1] * originalPointY) + (matrix[2][2] * originalPointZ);
+
+	return ([newPointX,newPointY,newPointZ]);
+};
+
+function ApplyTransformation(matrix:Types.T_Matrix_2_3                    , point:Point.Types.T_Point3D):Point.Types.T_Point2D
+function ApplyTransformation(matrix:Types.T_Matrix_3_3                    , point:Point.Types.T_Point3D):Point.Types.T_Point3D
+function ApplyTransformation(matrix:Types.T_Matrix_2_3|Types.T_Matrix_3_3 , point:Point.Types.T_Point3D):Point.Types.T_Point
+{
+	if      (IsMatrix_2_3(matrix)) return (ApplyTransformation_2_3__3_1(matrix, point));
+	else if (IsMatrix_3_3(matrix)) return (ApplyTransformation_3_3__3_1(matrix, point));
+	else                           return (matrix);
+};
+
+function ApplyScaling(point:Point.Types.T_Point3D, scalingFactor:number):Point.Types.T_Point3D
+{
+	const originalPointX:number = Point.Utils.GetX(point);
+	const originalPointY:number = Point.Utils.GetY(point);
+	const originalPointZ:number = Point.Utils.GetZ(point);
+
+	return ([originalPointX * scalingFactor, originalPointY * scalingFactor, originalPointZ * scalingFactor]);	
+};
+
+export function ProjectWorldView_ToCameraView(matrix:Types.T_Matrix_2_3, polygones:Polygone.Types.T_Polygone3D[]):Polygone.Types.T_Polygone2D[]
 {
 	let result:Polygone.Types.T_Polygone2D[] = [];
 
@@ -186,18 +244,56 @@ export function ProjectWorldView_ToCameraView(
 		let polygoneProjection:Polygone.Types.T_Polygone2D = [];
 
 		for (const point of polygone)
-		{
-			const originalPointX:number = Point.Utils.GetX(point);
-			const originalPointY:number = Point.Utils.GetY(point);
-			const originalPointZ:number = Point.Utils.GetZ(point);
-
-			const newPointX:number = (matrix[0][0] * originalPointX) + (matrix[0][1] * originalPointY) + (matrix[0][2] * originalPointZ);
-			const newPointY:number = (matrix[1][0] * originalPointX) + (matrix[1][1] * originalPointY) + (matrix[1][2] * originalPointZ);
-
-			polygoneProjection = [...polygoneProjection, [newPointX,newPointY]];
-		}
+			polygoneProjection = [...polygoneProjection, ApplyTransformation(matrix, point)];
 		
 		result = [...result, polygoneProjection];
+	}
+
+	return (result);
+};
+
+
+export function GenerateRotationMatrix(
+	rotationAngleX:number,
+	rotationAngleY:number,
+	rotationAngleZ:number,
+):Types.T_Matrix_3_3
+{
+	const value_1_1:number = Math.cos(rotationAngleY) * Math.cos(rotationAngleZ);
+	const value_1_2:number = (-Math.cos(rotationAngleX) * Math.sin(rotationAngleZ)) + (Math.sin(rotationAngleX) * Math.sin(rotationAngleY) * Math.cos(rotationAngleZ));
+	const value_1_3:number = (Math.sin(rotationAngleX) * Math.sin(rotationAngleZ)) + (Math.cos(rotationAngleX) * Math.sin(rotationAngleY) * Math.cos(rotationAngleZ));
+	const value_2_1:number = Math.cos(rotationAngleY) * Math.sin(rotationAngleZ);
+	const value_2_2:number = (Math.cos(rotationAngleX) * Math.cos(rotationAngleZ)) + (Math.sin(rotationAngleX) * Math.sin(rotationAngleY) * Math.sin(rotationAngleZ));
+	const value_2_3:number = (-Math.sin(rotationAngleX) * Math.cos(rotationAngleZ)) + (Math.cos(rotationAngleX) * Math.sin(rotationAngleY) * Math.sin(rotationAngleZ));
+	const value_3_1:number = -Math.sin(rotationAngleY);
+	const value_3_2:number = Math.sin(rotationAngleX) * Math.cos(rotationAngleY);
+	const value_3_3:number = Math.cos(rotationAngleX) * Math.cos(rotationAngleY);
+
+	return (
+		[
+			[value_1_1,value_1_2,value_1_3],
+			[value_2_1,value_2_2,value_2_3],
+			[value_3_1,value_3_2,value_3_3],
+		]
+	);
+};
+
+export function MoveCamera(
+	worldModel:Polygone.Types.T_Polygone3D[],
+	scalingFactor:number,
+	rotationMatrix:Types.T_Matrix_3_3,
+):Polygone.Types.T_Polygone3D[]
+{
+	let result:Polygone.Types.T_Polygone3D[] = [];
+
+	for (const polygone of worldModel)
+	{
+		let polygoneAfterCameraMovement:Polygone.Types.T_Polygone3D = [];
+
+		for (const point of polygone)
+			polygoneAfterCameraMovement = [...polygoneAfterCameraMovement, ApplyTransformation(rotationMatrix, ApplyScaling(point, scalingFactor))];
+	
+		result = [...result, polygoneAfterCameraMovement];
 	}
 
 	return (result);

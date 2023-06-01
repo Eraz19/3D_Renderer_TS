@@ -1,4 +1,6 @@
 import * as Primitive from "eraz-lib/build/Primitive";
+import * as Point     from "eraz-lib/build/Graphic/Point";
+import * as Color     from "eraz-lib/build/Graphic/Color";
 
 // Nomenclature for matrices types : T_Matrix_Row_Col
 
@@ -27,4 +29,12 @@ export type T_EventsResult =
 	xRotation:number;
 	yRotation:number;
 	zRotation:number;
+	projection:"xy"|"xz"|"yz";
+};
+
+
+export type T_PointDisplay =
+{
+	point:Point.Types.T_Point2D;
+	color:Color.RGB.Types.T_Color;
 };
