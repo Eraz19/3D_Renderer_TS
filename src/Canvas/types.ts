@@ -1,8 +1,26 @@
+import * as Primitive from "eraz-lib/build/Primitive";
 import * as Point     from "eraz-lib/build/Graphic/Point";
 import * as Color     from "eraz-lib/build/Graphic/Color";
-import * as Line      from "eraz-lib/build/Graphic/Line";
-import * as Polygone  from "eraz-lib/build/Graphic/Polygone";
-import * as Primitive from "eraz-lib/build/Primitive";
+
+// Nomenclature for matrices types : T_Matrix_Row_Col
+
+export type T_Matrix =
+	| T_Matrix_2_2
+	| T_Matrix_2_3
+	| T_Matrix_3_3
+	| T_Matrix_4_4
+;
+
+export type T_SquareMatrix =
+	| T_Matrix_2_2
+	| T_Matrix_3_3
+	| T_Matrix_4_4
+;
+
+export type T_Matrix_2_2 = Primitive.Tuple.Types.T_Tuple<Primitive.Tuple.Types.T_Tuple<number,2>,2>;
+export type T_Matrix_3_3 = Primitive.Tuple.Types.T_Tuple<Primitive.Tuple.Types.T_Tuple<number,3>,3>;
+export type T_Matrix_4_4 = Primitive.Tuple.Types.T_Tuple<Primitive.Tuple.Types.T_Tuple<number,4>,4>;
+export type T_Matrix_2_3 = Primitive.Tuple.Types.T_Tuple<Primitive.Tuple.Types.T_Tuple<number,3>,2>;
 
 
 export type T_EventsResult =
@@ -14,22 +32,9 @@ export type T_EventsResult =
 	projection:"xy"|"xz"|"yz";
 };
 
-export type T_CoordinateBases_3D = Primitive.Tuple.Types.T_Tuple<T_ColoredLine<Line.Types.T_Line3D>, 3>;
 
-export type T_ColoredPoint<T extends Point.Types.T_Point> =
+export type T_PointDisplay =
 {
-	coord:T;
-	color:Color.RGB.Types.T_Color;
-};
-
-export type T_ColoredLine<T extends Line.Types.T_Line> =
-{
-	coord:T;
-	color:Color.RGB.Types.T_Color;
-};
-
-export type T_ColoredPolygone<T extends Polygone.Types.T_Polygone> =
-{
-	coord:T;
+	point:Point.Types.T_Point2D;
 	color:Color.RGB.Types.T_Color;
 };
