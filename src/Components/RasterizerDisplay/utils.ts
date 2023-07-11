@@ -7,7 +7,7 @@ import * as Color      from "../../Utils/Color";
 
 
 export function RenderFrame(
-	canvas                : HTMLCanvasElement,
+	canvas                : HTMLCanvasElement|null,
 	coordinateSystemBases : Rasterizer.Types.T_CoordinateBases_3D,
 	mesh                  : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
 	camera                : Rasterizer.PolarCamera.Types.T_PolarCamera,
@@ -111,18 +111,21 @@ export function RenderFrame(
 		});
 	};
 
-	const context : CanvasRenderingContext2D|null = canvas.getContext("2d");
-	
-	if (context)
+	if (canvas != null)
 	{
-		const imagedata                     : ImageData                                                       = context.createImageData(context.canvas.width, context.canvas.height);
-		const cameraToWorldMatrix           : Matrix.Types.T_Matrix_4_4                                       = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
-		const worldToCameraMatrix           : Matrix.Types.T_Matrix_4_4                                       = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
-		const coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D                           = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
-		const meshInCameraSpace             : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh(worldToCameraMatrix,mesh,);
+		const context : CanvasRenderingContext2D|null = canvas.getContext("2d");
+		
+		if (context)
+		{
+			const imagedata                     : ImageData                                                       = context.createImageData(context.canvas.width, context.canvas.height);
+			const cameraToWorldMatrix           : Matrix.Types.T_Matrix_4_4                                       = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
+			const worldToCameraMatrix           : Matrix.Types.T_Matrix_4_4                                       = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+			const coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D                           = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
+			const meshInCameraSpace             : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh(worldToCameraMatrix,mesh,);
 
-		DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace);
-		DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace);
-		context.putImageData   (imagedata, 0, 0);
+			DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace);
+			DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace);
+			context.putImageData   (imagedata, 0, 0);
+		}
 	}
 };

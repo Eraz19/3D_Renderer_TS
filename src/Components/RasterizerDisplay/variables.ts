@@ -1,9 +1,9 @@
-import * as Types from "./types";
+import * as Rasterizer from "../../Utils/Rasterizer";
 
 
 const basesSize:number = 100;
 
-export const coordinateSystemBases_3D:Types.T_CoordinateBases_3D =
+export const coordinateSystemBases_3D:Rasterizer.Types.T_CoordinateBases_3D =
 [
 	{
 		color: { red: 255, green:   0, blue:   0 },

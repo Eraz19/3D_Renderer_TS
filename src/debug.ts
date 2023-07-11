@@ -1,6 +1,3 @@
-
-
-
 /*export function PrintCoordSystem(bases:Types.T_CoordinateBases_3D):void
 {
 	let result:string = bases.map((base:Types.T_ColoredLine<Line.Types.T_Line3D>, index:number):string =>
@@ -23,3 +20,5 @@ export function PrintableMatrix(matrix:number[][]):string
 {
 	return (matrix.join("\n"));
 };*/
+
+export {};

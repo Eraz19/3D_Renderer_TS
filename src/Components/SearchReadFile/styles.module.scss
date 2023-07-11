@@ -1,0 +1,42 @@
+.Container
+{
+	width          : 100%;
+	height         : 30px;
+	background     : #383838;
+	display        : flex;
+	align-content  : center;
+	justify-content: space-around;
+	gap            : 10px;
+	padding        : 10px 0px;
+
+	& > .BrowseButton
+	{
+		background-color: #6b6b6b;
+		color           : white;
+		border          : none;
+		border-radius   : 2px;
+		font-family     : sans-serif;
+		display         : inline-block;
+		text-align      : center;
+		padding         : 5px 5px;
+		margin          : 0 0 0 10px;
+		cursor          : pointer;
+	}
+
+	& > .FileName
+	{
+		flex-grow    : 3;
+		background   : #6b6b6b;
+		border-radius: 5px;
+		margin       : 0 10px 0 0;
+		padding      : 0 10px;
+		display      : table;
+		height       : 100%;
+
+		& > div
+		{
+			display       : table-cell;
+			vertical-align: middle;
+		};
+	}
+};
