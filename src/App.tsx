@@ -10,10 +10,8 @@ import      Style             from "./style.module.scss";
 
 function App()
 {
-	const [mesh, setMesh] = React.useState<Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]>([]);
+	const [mesh      , setMesh      ] = React.useState<Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]>([]);
 	const [debugPanel, setDebugPanel] = React.useState<PolarCamera.Types.T_PolarCamera>();
-
-	React.useEffect(() => { console.log(debugPanel); }, [debugPanel])
 
 	return (
 		<>

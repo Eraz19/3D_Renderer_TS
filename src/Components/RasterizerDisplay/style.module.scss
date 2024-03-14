@@ -1,6 +1,11 @@
 .canvasContainer
 {
-	position: relative;
-	width: 100%;
-	height: inherit;
+	position : relative;
+	width    : 100%;
+	height   : inherit;
+
+	&:active
+	{
+		cursor : move;
+	};
 };

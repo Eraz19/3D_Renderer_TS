@@ -11,11 +11,18 @@ import      Style       from "./style.module.scss";
 
 export const Component = (props : Types.T_Props) : JSX.Element =>
 {
-	const ref : React.RefObject<HTMLCanvasElement> = React.useRef(null);
+	const ref          = React.useRef<HTMLCanvasElement>(null);
+	const mesh         = React.useRef<Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]>([]);
+	const mouse        = React.useRef<Types.T_MousePosition|undefined>(undefined);
+	const keydownStack = React.useRef<Set<string>>(new Set());
+	const camera       = React.useRef<Types.T_Camera>(
+		{
+			...props.defaultCamera,
+			initialAnchor      : { x: props.defaultCamera.anchor.x, y: props.defaultCamera.anchor.y, z: props.defaultCamera.anchor.z },
+			cameraToWorldMatrix: undefined,
+		}
+	);
 
-	const mesh : React.MutableRefObject<Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]> = React.useRef([]);
-
-	const camera : React.MutableRefObject<PolarCamera.Types.T_PolarCamera> = React.useRef(props.defaultCamera);
 	const [cameraDebug, setCameraDebug] = React.useState<PolarCamera.Types.T_PolarCamera>(props.defaultCamera);
 
 	React.useEffect(() =>
@@ -24,62 +31,104 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 		Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
 	}, [props.mesh]);
 
-	React.useEffect(() => { props.cameraDebug(cameraDebug); }, [cameraDebug]);
+	React.useEffect(() =>
+	{
+		props.cameraDebug(cameraDebug);
+	}, [cameraDebug]);
 	
 	React.useEffect(() =>
 	{
+		const observer = new ResizeObserver(OnResize);
+
 		function AddEvents(elemRef : React.RefObject<HTMLCanvasElement>) : void
 		{
 			if (elemRef.current)
 			{
-				elemRef.current.addEventListener("wheel"  , OnScroll );
-				document       .addEventListener("keydown", OnKeydown);
-				window         .addEventListener("resize" , OnResize );
+				observer.observe         (elemRef.current);
+				window  .addEventListener("keydown", OnKeydown);
+				window  .addEventListener("keyup"  , onKeyUp  );
 			}
 		};
 		function RemoveEvents(elemRef : React.RefObject<HTMLCanvasElement>) : void
 		{
 			if (elemRef.current)
 			{
-				elemRef.current.removeEventListener("wheel"  , OnScroll );
-				document       .removeEventListener("keydown", OnKeydown);
-				window         .removeEventListener("resize" , OnResize );
+				observer.disconnect         ();
+				window  .removeEventListener("keydown", OnKeydown);
+				window  .removeEventListener("keyup"  , onKeyUp  );
 			}
 		};
 		
 		AddEvents(ref);
-		OnResize();
-		Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
 		
 		return (() => { RemoveEvents(ref); });
 	}, []);
 	
-	function ForceRedrawing<T>(
-		e              : T,
-		camera         : PolarCamera.Types.T_PolarCamera,
-		setCameraDebug : React.Dispatch<React.SetStateAction<PolarCamera.Types.T_PolarCamera>>,
-		callback       : Types.T_EventCameraCallback<T>,
-	) : void
+
+	function MouseDown(e : React.MouseEvent<HTMLCanvasElement, MouseEvent>) : void
 	{
-		if (ref.current != null && callback(e, camera, setCameraDebug))
-			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera);
+		mouse.current = { x: e.clientX, y: e.clientY };
 	};
 
-	function OnScroll(e : WheelEvent) : void
+	function MouseUp() : void
 	{
-		ForceRedrawing(e, camera.current, setCameraDebug, Event.ZoomCamera);
-		props.cameraDebug(camera.current);
+		mouse.current = undefined;
 	};
-	
-	function OnKeydown(e : KeyboardEvent) : void
+
+	function MouseMove(e : React.MouseEvent<HTMLCanvasElement, MouseEvent>) : void
 	{
-		if (!Event.ChangeCameraMode(e, camera.current, setCameraDebug))
+		if (mouse.current != null)
 		{
-			if (camera.current.eventTarger === "anchor") ForceRedrawing(e, camera.current, setCameraDebug, Event.DragCamera);
-			else                                         ForceRedrawing(e, camera.current, setCameraDebug, Event.RotateCamera);
+			const mouseMoveX : number = e.clientX - mouse.current.x;
+			const mouseMoveY : number = e.clientY - mouse.current.y;
+
+			if (camera.current.eventTarger === "camera" && Event.RotateCamera(-mouseMoveX, mouseMoveY, camera.current, setCameraDebug))
+				Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
+			else
+			{
+				Event.DragCamera(-mouseMoveX, -mouseMoveY, camera.current, setCameraDebug);
+				Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
+			}
+
+			mouse.current = { x: e.clientX, y: e.clientY };
+		}
+	};
+
+	function onKeyUp(e : KeyboardEvent) : void
+	{
+		if (e.key === "Control")
+		{
+			camera.current.eventTarger = "anchor";
+			props.cameraDebug(camera.current);
 		}
 
-		props.cameraDebug(camera.current);
+		keydownStack.current.delete(e.key);
+	};
+
+	function OnKeydown(e : KeyboardEvent) : void
+	{
+		console.log(e.key);
+
+		if (e.key === "Control")
+		{
+			camera.current.eventTarger = "camera";
+			props.cameraDebug(camera.current);
+		}
+		else if (e.key === "c" && keydownStack.current.has("Control"))
+		{
+			camera.current.anchor = { ...camera.current.initialAnchor };
+			console.log(props.defaultCamera.anchor);
+			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
+		}
+
+		keydownStack.current.add(e.key);
+	};
+
+	// Zoom event
+	function OnScroll(e : React.WheelEvent<HTMLCanvasElement>) : void
+	{
+		if (Event.ZoomCamera(e.deltaY, camera.current, setCameraDebug))
+			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
 	};
 
 	function OnResize() : void
@@ -89,15 +138,18 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 			ref.current.width  = ref.current.clientWidth;
 			ref.current.height = ref.current.clientHeight;
 
-			if (ref.current != null)
-				Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
+			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, camera.current);
 		}
 	};
 	
 	return (
 		<canvas
-			ref      ={ref}
-			className={Style.canvasContainer}
+			ref         = {ref}
+			className   = {Style.canvasContainer}
+			onWheel     = {OnScroll}
+			onMouseDown = {MouseDown}
+			onMouseUp   = {MouseUp}
+			onMouseMove = {MouseMove}
 		/>
 	);
 };
