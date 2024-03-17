@@ -1,7 +1,7 @@
-import * as PolarCamera from "../../../Utils/Rasterizer/PolarCamera";
+import * as RasterizerDisplay from "../../RasterizerDisplay";
 
 
 export type T_Props =
 {
-	camera?:PolarCamera.Types.T_PolarCamera;
+	camera?:RasterizerDisplay.Types.T_CameraState;
 };

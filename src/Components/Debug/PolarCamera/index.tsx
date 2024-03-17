@@ -8,7 +8,7 @@ export const Conponment = (props:Types.T_Props) =>
 		<table className={Style.Table}>
 			<tbody>
 				<tr><th colSpan={2}>Mode</th></tr>
-				<tr><td colSpan={2}>{(props.camera) ? props.camera.eventTarger : '-'}</td></tr>
+				<tr><td colSpan={2}>{(props.camera) ? props.camera.action : '-'}</td></tr>
 
 				<tr><th colSpan={2}>Anchor</th></tr>
 				<tr><td>x</td><td>{(props.camera) ? props.camera.anchor.x : '-'}</td></tr>

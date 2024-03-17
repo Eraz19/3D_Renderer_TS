@@ -5,6 +5,7 @@ import * as Rasterizer from "../../Utils/Rasterizer";
 import * as Matrix     from "../../Utils/Matrix";
 import * as Coord      from "../../Utils/Coord";
 import * as Color      from "../../Utils/Color";
+import * as Vector     from "../../Utils/Vector";
 
 
 function FillPixelBuffer(
@@ -23,6 +24,19 @@ function FillPixelBuffer(
 		buffer[bufferIndex + 1] = color.green;
 		buffer[bufferIndex + 2] = color.blue;
 		buffer[bufferIndex + 3] = 255;
+	}
+};
+
+function FillCanvasBackground(
+	buffer  : Uint8ClampedArray,
+	context : CanvasRenderingContext2D,
+	color   : Color.RGB.Types.T_Color,
+) : void
+{
+	for (let i : number = 0; i <= context.canvas.height; ++i)
+	{
+		for (let j : number = 0; j <= context.canvas.width; ++j)
+			FillPixelBuffer(buffer, context, { x: j, y: i }, color);
 	}
 };
 
@@ -107,11 +121,27 @@ function DrawMeshOnCanvas(
 	});
 };
 
+export function ExtractCameraToAnchorVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+{
+	return ([cameraToWorldMatrix[0][0],cameraToWorldMatrix[0][1],cameraToWorldMatrix[0][2]]);
+};
+
+export function ExtractCameraToSideVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+{
+	return ([cameraToWorldMatrix[1][0],cameraToWorldMatrix[1][1],cameraToWorldMatrix[1][2]]);
+};
+
+export function ExtractCameraToTopVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+{
+	return ([cameraToWorldMatrix[2][0],cameraToWorldMatrix[2][1],cameraToWorldMatrix[2][2]]);
+};
+
 export function RenderFrame(
 	canvas                : HTMLCanvasElement|null,
 	coordinateSystemBases : Rasterizer.Types.T_CoordinateBases_3D,
 	mesh                  : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
-	camera                : Types.T_Camera,
+	camera                : Types.T_CameraState,
+	background           ?: Color.RGB.Types.T_Color,
 ): void
 {
 	if (canvas != null)
@@ -126,11 +156,18 @@ export function RenderFrame(
 			const coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D                           = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
 			const meshInCameraSpace             : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh            (worldToCameraMatrix, mesh                 );
 
+			if (background)
+				FillCanvasBackground(imagedata.data, context, background);
+
 			DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace, camera);
 			DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace            , camera);
 			context.putImageData   (imagedata, 0, 0);
 
-			camera.cameraToWorldMatrix = cameraToWorldMatrix;
+			camera.cameraToWorldMatrix  = cameraToWorldMatrix;
+			camera.worldToCameraMatrix  = worldToCameraMatrix;
+			camera.cameraToAnchorVector = ExtractCameraToAnchorVector_FromCameraToWorldMatrix(worldToCameraMatrix);
+			camera.cameraToSideVector   = ExtractCameraToSideVector_FromCameraToWorldMatrix  (worldToCameraMatrix);
+			camera.cameraToTopVector    = ExtractCameraToTopVector_FromCameraToWorldMatrix   (worldToCameraMatrix);
 		}
 	}
 };

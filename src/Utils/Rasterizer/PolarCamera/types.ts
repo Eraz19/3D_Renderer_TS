@@ -14,5 +14,4 @@ export type T_PolarCamera =
 {
 	anchor:Coord.Types.T_Coord3D;
 	polarCoord:T_PolarCoordSystem;
-	eventTarger:"camera"|"anchor";
 };

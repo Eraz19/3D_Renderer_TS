@@ -36,17 +36,27 @@ export function FromPolar_ToCartesian(coord : Types.T_PolarCoordSystem) : Vector
 export function GenerateCamera_ToWorldMatrix(camera : Types.T_PolarCamera): Matrix.Types.T_Matrix_4_4
 {
 	const vectorFromAnchorToCamera : Vector.Types.T_Vec3D = FromPolar_ToCartesian(camera.polarCoord);
-	const cameraSpaceX             : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.Inverse(vectorFromAnchorToCamera));
-	const cameraSpaceY             : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.CrossProduct(cameraSpaceX, [0,0,1]));
-	const cameraSpaceZ             : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.CrossProduct(cameraSpaceY, cameraSpaceX));
+	const cameraToAnchorVector     : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.Inverse(vectorFromAnchorToCamera));
+	const cameraToSideVector       : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.CrossProduct(cameraToAnchorVector, [0,0,1]));
+	const cameraToTopVector        : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.CrossProduct(cameraToSideVector, cameraToAnchorVector));
 	const cameraCoord              : Vector.Types.T_Vec3D = Vector.Utils.Add(Coord.Utils.FromCoord_ToVec({ x: camera.anchor.x, y: camera.anchor.y, z: camera.anchor.z }), vectorFromAnchorToCamera);
 
 	return (
 		[
-			[cameraSpaceX[0],cameraSpaceY[0],cameraSpaceZ[0],cameraCoord[0]],
-			[cameraSpaceX[1],cameraSpaceY[1],cameraSpaceZ[1],cameraCoord[1]],
-			[cameraSpaceX[2],cameraSpaceY[2],cameraSpaceZ[2],cameraCoord[2]],
-			[              0,              0,              0,             1],
+			[cameraToAnchorVector[0],cameraToSideVector[0],cameraToTopVector[0],cameraCoord[0]],
+			[cameraToAnchorVector[1],cameraToSideVector[1],cameraToTopVector[1],cameraCoord[1]],
+			[cameraToAnchorVector[2],cameraToSideVector[2],cameraToTopVector[2],cameraCoord[2]],
+			[                      0,                    0,                   0,             1],
 		]
+	);
+};
+
+export function DeepCopy(camera : Types.T_PolarCamera) : Types.T_PolarCamera
+{
+	return (
+		{
+			anchor    : { x     : camera.anchor.x        , y  : camera.anchor.y      , z     : camera.anchor.z          },
+    		polarCoord: { theta : camera.polarCoord.theta, phi: camera.polarCoord.phi, radius: camera.polarCoord.radius },
+		}
 	);
 };
