@@ -165,7 +165,6 @@ export function RedrawFrame(
 			if (coordinateSystemInCameraSpace) DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace, camera);
 			if (meshInCameraSpace)             DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace            , camera);
 
-			console.log("redrawFrame: ", imagedata.data);
 			context.putImageData(imagedata, 0, 0);
 
 			camera.cameraToWorldMatrix  = cameraToWorldMatrix;

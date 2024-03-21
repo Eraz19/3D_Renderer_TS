@@ -6,18 +6,8 @@ import * as Polygone   from "../../../Utils/Shapes/Polygone";
 import * as Rasterizer from "../../../Utils/Rasterizer";
 import * as Color      from "../../../Utils/Color";
 
-import * as UIRasterizer from "../Rasterizer";
-
 
 export type T_Second = number;
-
-export type T_RerenderFunction = (
-    canvas                 : HTMLCanvasElement | undefined,
-	camera                 : UIRasterizer.Types.T_CameraState,
-    coordinateSystemBases ?: Rasterizer.Types.T_CoordinateBases_3D,
-    mesh                  ?: Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
-    background            ?: Color.RGB.Types.T_Color,
-) => void
 
 export type T_CameraState = PolarCamera.Types.T_PolarCamera &
 {
@@ -38,8 +28,8 @@ export type T_CanvasSize =
 
 export type T_RenderLoopState =
 {
-	cameraSnapShot      : PolarCamera.Types.T_PolarCamera;
 	frameTime           : T_Second;
+	cameraSnapShot     ?: PolarCamera.Types.T_PolarCamera;
 	canvasSizeSnapShot ?: T_CanvasSize;
 	renderEnd          ?: Date;
 	renderStart        ?: Date;
@@ -47,12 +37,12 @@ export type T_RenderLoopState =
 
 export type T_RasterizerContext =
 {
-    canvas                   ?: HTMLCanvasElement;
+    canvasRef                   ?: HTMLCanvasElement;
+	canvasSize               ?: T_CanvasSize;
     camera                   ?: T_CameraState;
     modelMesh                ?: Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[];
 	coordinateSystemBases_3D ?: Rasterizer.Types.T_CoordinateBases_3D
 	background               ?: Color.RGB.Types.T_Color;
-    rerenderFrame            ?: T_RerenderFunction;
 	renderLoop               ?: T_RenderLoopState;
 };
 

@@ -18,7 +18,7 @@ export function Component() : JSX.Element
 
 	React.useEffect(() =>
 	{
-		const observer = new ResizeObserver(HandleResizeResize);
+		const observer = new ResizeObserver(HandleResize);
 
 		function AddEvents(elemRef : HTMLCanvasElement | undefined) : void
 		{
@@ -31,43 +31,15 @@ export function Component() : JSX.Element
 			observer.disconnect();
 		};
 		
-		AddEvents(context.canvas);
-		context.rerenderFrame = Utils.RedrawFrame;
-		//RenderLoop();
+		AddEvents(context.canvasRef);
+		RenderLoop();
 		
 		return (() => { RemoveEvents(); });
 	}, []);
 
-	function IsCameraIsSame(
-		prevCamera ?: PolarCamera.Types.T_PolarCamera,
-		newCamera  ?: PolarCamera.Types.T_PolarCamera,
-	) : boolean
-	{
-		if (prevCamera && newCamera)
-		{
-			const cameraAnchorIsSame     : boolean = Coord      .Utils.IsEqual(prevCamera.anchor    , newCamera.anchor    );
-			const cameraPolarCoordIsSame : boolean = PolarCamera.Utils.IsEqual(prevCamera.polarCoord, newCamera.polarCoord);
-	
-			return (cameraAnchorIsSame && cameraPolarCoordIsSame);
-		}
-		else
-			return (false);
-	};
-
-	function IsCanvasSizeIsSame(
-		prevCanvasSize ?: Types.T_CanvasSize,
-		newCanvasSier  ?: Types.T_CanvasSize,
-	) : boolean
-	{
-		if (prevCanvasSize && newCanvasSier) return (prevCanvasSize.width === newCanvasSier.width && prevCanvasSize.height === newCanvasSier.height);
-		else                                 return (false);
-	};
 
 	async function RenderLoop() : Promise<void>
 	{
-		let renderTime              : Types.T_Second;
-		let remainingSecondsInFrame : Types.T_Second;
-
 		function Sleep(millisecond : number) : Promise<void>
 		{
 			clearTimeout(sleepTimeout.current);
@@ -75,33 +47,66 @@ export function Component() : JSX.Element
 			return (new Promise((resolve) => { sleepTimeout.current = setTimeout(resolve, millisecond); }));
 		};
 
+		function IsCameraIsSame(
+			prevCamera ?: PolarCamera.Types.T_PolarCamera,
+			newCamera  ?: PolarCamera.Types.T_PolarCamera,
+		) : boolean
+		{
+			if (prevCamera && newCamera)
+			{
+				const cameraAnchorIsSame     : boolean = Coord      .Utils.IsEqual(prevCamera.anchor    , newCamera.anchor    );
+				const cameraPolarCoordIsSame : boolean = PolarCamera.Utils.IsEqual(prevCamera.polarCoord, newCamera.polarCoord);
+		
+				return (cameraAnchorIsSame && cameraPolarCoordIsSame);
+			}
+			else
+				return (false);
+		};
+	
+		function IsCanvasSizeIsSame(
+			prevCanvasSize ?: Types.T_CanvasSize,
+			newCanvasSier  ?: Types.T_CanvasSize,
+		) : boolean
+		{
+			if (prevCanvasSize && newCanvasSier) return (prevCanvasSize.width === newCanvasSier.width && prevCanvasSize.height === newCanvasSier.height);
+			else                                 return (false);
+		};
+
+		function ResizeCanvas(newSize : Types.T_CanvasSize) : void
+		{
+			if (context.canvasRef)
+			{
+				context.canvasRef.width  = newSize.width; 
+				context.canvasRef.height = newSize.height;
+			}
+		};
+
+		let renderTime              : Types.T_Second;
+		let remainingSecondsInFrame : Types.T_Second;
+
 		if (context.renderLoop)
 		{
-			for (let i : number = 0; i < 20; ++i)
+			while (true)
 			{
 				context.renderLoop.renderStart = new Date();
-	
-				if (context.camera && context.canvas)
-				{
-					console.log("IsCameraIsSame: ", IsCameraIsSame    (context.renderLoop?.cameraSnapShot    , { anchor: context.camera.anchor     , polarCoord: context.camera.polarCoord  }));
-					console.log("IsCanvasSizeIsSame: ", IsCanvasSizeIsSame(context.renderLoop?.canvasSizeSnapShot, { width : context.canvas.clientWidth, height    : context.canvas.clientHeight}));
-				}
 
 				if
 				(
-					context.camera &&
-					context.canvas &&
-					!IsCameraIsSame    (context.renderLoop?.cameraSnapShot    , { anchor: context.camera.anchor     , polarCoord: context.camera.polarCoord  }) //&&
-					//!IsCanvasSizeIsSame(context.renderLoop?.canvasSizeSnapShot, { width : context.canvas.clientWidth, height    : context.canvas.clientHeight})
+					context.camera     &&
+					context.canvasRef  &&
+					context.canvasSize && 
+					(
+						!IsCameraIsSame    (context.renderLoop?.cameraSnapShot    , { ...context.camera     }) ||
+						!IsCanvasSizeIsSame(context.renderLoop?.canvasSizeSnapShot, { ...context.canvasSize })
+					)
 				)
 				{
-					console.log("in");
-
-					context.renderLoop.cameraSnapShot     =	PolarCamera.Utils.DeepCopy({ anchor: context.camera.anchor, polarCoord: context.camera.polarCoord });
-					//context.renderLoop.canvasSizeSnapShot = { width: context.canvas.clientWidth, height: context.canvas.clientHeight};
-
+					context.renderLoop.cameraSnapShot     =	PolarCamera.Utils.DeepCopy(context.camera);
+					context.renderLoop.canvasSizeSnapShot = { ...context.canvasSize };
+					ResizeCanvas(context.canvasSize);
+					
 					if (context.camera)
-						Utils.RedrawFrame(context.canvas, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
+						Utils.RedrawFrame(context.canvasRef, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
 				}
 
 				context.renderLoop.renderEnd = new Date();
@@ -115,19 +120,13 @@ export function Component() : JSX.Element
 
 	function BindCanvasInContext(ref : HTMLCanvasElement | null)
 	{
-		context.canvas = ref ?? undefined;
+		context.canvasRef = ref ?? undefined;
 	};
 
-	function HandleResizeResize() : void
+	function HandleResize() : void
 	{
-		if (context.canvas)
-		{
-			context.canvas.width  = context.canvas.clientWidth;
-			context.canvas.height = context.canvas.clientHeight;
-
-			if (context.camera)
-				Utils.RedrawFrame(context.canvas, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
-		}
+		if (context.canvasRef)
+			context.canvasSize = { width: context.canvasRef.clientWidth, height: context.canvasRef.clientHeight };
 	};
 
 	return (
