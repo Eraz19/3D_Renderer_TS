@@ -1,13 +1,14 @@
-import React from "react";
+import * as React from "react";
 
-import * as Polygone    from "../../Utils/Shapes/Polygone";
+
 import * as PolarCamera from "../../Utils/Rasterizer/PolarCamera";
 import * as Color       from "../../Utils/Color";
-import * as Types       from "./types";
-import * as Event       from "./event";
-import * as Utils       from "./utils";
-import * as Variables   from "./variables";
-import      Style       from "./style.module.scss";
+
+import * as UIRasterizer from "./Rasterizer";
+import * as Overlay      from "./Overlay";
+import * as Event        from "./event";
+import * as Types        from "./types";
+import      Style        from "./style.module.scss";
 
 
 const DEFAULT_DRAG_FACTOR   : number = 0.6;
@@ -16,107 +17,196 @@ const DEFAULT_ZOOM_FACTOR   : number = 0.1;
 
 const RASTERIZER_BACKGROUND_COLOR : Color.RGB.Types.T_Color = { red: 92, green: 92, blue: 92 };
 
-export const Component = (props : Types.T_Props) : JSX.Element =>
+const NUMBER_OF_FRAME_PER_SECOND : number = 60;
+
+export const RasterizerContext = React.createContext<UIRasterizer.Types.T_RasterizerContext>({});
+
+
+export function Component(props : Types.T_Props) : JSX.Element
 {
-	const ref          = React.useRef<HTMLCanvasElement>(null);
-	const mesh         = React.useRef<Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]>([]);
-	const input        = React.useRef<Types.T_RasterizerInput>(
-		{
-			mouse   : { status: Types.E_MouseStatus.UP },
-			keyboard: { stack : new Set<string>()      },
-		}
-	);
-	const cameraState  = React.useRef<Types.T_CameraState>(
-		{
-			...PolarCamera.Utils.DeepCopy(props.defaultCamera),
-			initialAnchor: {...props.defaultCamera.anchor},
-			initialCamera: {...props.defaultCamera.polarCoord},
-			action       : Types.E_RasterizerAction.NONE,
-			dragEnabled  : props.dragEnabled,
-			rotateEnabled: props.rotateEnabled,
-			zoomEnabled  : props.zoomEnabled,
-		}
-	);
+    const input   = React.useRef<Types.T_Input>                         (InitializeInput  ());
+    const event   = React.useRef<Types.T_Event>                         (IntializeEvent   ());
+    const context = React.useRef<UIRasterizer.Types.T_RasterizerContext>(InitializeContext());
 
-	React.useEffect(() => { cameraState.current.rotateEnabled = props.rotateEnabled; }, [props.rotateEnabled]);
-	React.useEffect(() => { cameraState.current.dragEnabled   = props.dragEnabled;   }, [props.dragEnabled  ]);
-	React.useEffect(() => { cameraState.current.zoomEnabled   = props.zoomEnabled;   }, [props.zoomEnabled  ]);
+    const [isMouseDown , setIsMouseDown] = React.useState<boolean>(false);
+    const [opentOverlay, setOpenOverlay] = React.useState<boolean>(false);
 
-	React.useEffect(() =>
+    React.useEffect(() => { input.current.keyboard.keybindings = KeyBinding(props.keyboardSettings?.keybindings); }, [props.keyboardSettings?.keybindings]);
+    React.useEffect(() => { event.current.rotateEnabled        = props.rotateSettings?.enabled ?? true;           }, [props.rotateSettings  ?.enabled    ]);
+	React.useEffect(() => { event.current.dragEnabled          = props.dragSettings  ?.enabled ?? true;           }, [props.dragSettings    ?.enabled    ]);
+	React.useEffect(() => { event.current.zoomEnabled          = props.zoomSettings  ?.enabled ?? true;           }, [props.zoomSettings    ?.enabled    ]);
+    React.useEffect(() => { event.current.zoomEnabled          = props.zoomSettings  ?.enabled ?? true;           }, [props.zoomSettings    ?.enabled    ]);
+    React.useEffect(() =>
+    {
+        context.current.modelMesh = props.mesh;
+
+        if (context.current.camera && context.current.rerenderFrame)
+            context.current.rerenderFrame(context.current.canvas, context.current.camera, context.current.coordinateSystemBases_3D, context.current.modelMesh, context.current.background);
+    }, [props.mesh]);
+
+    React.useEffect(() =>
 	{
-		mesh.current = props.mesh;
-		Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
-	}, [props.mesh]);
-
-	React.useEffect(() =>
-	{
-		const observer = new ResizeObserver(HandleResizeResize);
-
-		function AddEvents(elemRef : React.RefObject<HTMLCanvasElement>) : void
+		function AddEvents() : void
 		{
-			if (elemRef.current)
-			{
-				observer.observe         (elemRef.current);
-				window  .addEventListener("keydown", HandleKeydown);
-				window  .addEventListener("keyup"  , HandleKeyUp  );
-			}
+            window.addEventListener("keydown", HandleKeyDown);
+            window.addEventListener("keyup"  , HandleKeyUp  );
 		};
 		
-		function RemoveEvents(elemRef : React.RefObject<HTMLCanvasElement>) : void
+		function RemoveEvents() : void
 		{
-			if (elemRef.current)
-			{
-				observer.disconnect         ();
-				window  .removeEventListener("keydown", HandleKeydown);
-				window  .removeEventListener("keyup"  , HandleKeyUp  );
-			}
+			window.removeEventListener("keydown", HandleKeyDown);
+			window.removeEventListener("keyup"  , HandleKeyUp  );
 		};
 		
-		AddEvents(ref);
+		AddEvents();
 		
-		return (() => { RemoveEvents(ref); });
+		return (RemoveEvents);
 	}, []);
 
-	/**************************** Utils ****************************/
+    /**************************** Utils ****************************/
+
+    function InitializeContext() : UIRasterizer.Types.T_RasterizerContext
+    {
+        return (
+            {
+                canvas                  : undefined,
+                camera                  : InitializeCamera(),
+                modelMesh               : undefined,
+                coordinateSystemBases_3D: UIRasterizer.Variables.coordinateSystemBases_3D,
+                rerenderFrame           : undefined,
+                background              : RASTERIZER_BACKGROUND_COLOR,
+                renderLoop              : InitalizeRenderLoop(),
+                
+            }
+        );
+    };
+
+    function InitializeInput() : Types.T_Input
+    {
+        return (
+            {
+                mouse   : { status: Types.E_MouseStatus.UP },
+                keyboard:
+                {
+                    stack      : new Set<string>(),
+                    keybindings: KeyBinding(props.keyboardSettings?.keybindings),
+                },
+            }
+        );
+    };
+
+    function IntializeEvent() : Types.T_Event
+    {
+        return (
+            {
+                action         : Types.E_RasterizerAction.NONE,
+                dragEnabled    : props.dragSettings    ?.enabled ?? true,
+                rotateEnabled  : props.rotateSettings  ?.enabled ?? true,
+                zoomEnabled    : props.zoomSettings    ?.enabled ?? true,
+                keyboardEnabled: props.keyboardSettings?.enabled ?? true,
+            }
+        );
+    };
+
+    function InitalizeRenderLoop() : UIRasterizer.Types.T_RenderLoopState
+    {
+        return (
+            {
+                cameraSnapShot: PolarCamera.Utils.DeepCopy(props.defaultCamera),
+                frameTime     : 1 / NUMBER_OF_FRAME_PER_SECOND,
+                renderStart   : undefined,
+                renderEnd     : undefined
+            }
+        );
+    };
+
+    function InitializeCamera() : UIRasterizer.Types.T_CameraState
+    {
+        return (
+            {
+                ...PolarCamera.Utils.DeepCopy(props.defaultCamera),
+                initialAnchor: {...props.defaultCamera.anchor},
+                initialCamera: {...props.defaultCamera.polarCoord},
+            }
+        );
+    };
 
     function MouseDown_ToClassName() : string
     {
-		if
-		(
-			input.current.mouse.status === Types.E_MouseStatus.DOWN &&
-			cameraState.current.dragEnabled                         &&
-			cameraState.current.rotateEnabled
-		)
-			return (Style.MouseDown);
-		else
-			return ("");
+		if (isMouseDown && event.current.dragEnabled && event.current.rotateEnabled) return (Style.MouseDown);
+		else                                                                         return ("");
     };
 
-	function ReportCameraUpdate() : void
+    function KeyBinding(keybindings ?: Types.T_KeyBindingsSetting) : Types.T_KeyBindings
 	{
-		if (props.cameraDebug) 
-			props.cameraDebug(cameraState.current);
+		return (
+			{
+				rotateCamera: { keys: (keybindings?.rotateCamera == null || keybindings.rotateCamera.length === 0) ? ["Control"] : keybindings.rotateCamera     , action: "Drag" },
+                dragCamera  : { keys: []                                                                                                                        , action: "Drag" },
+				resetAnchor : { keys: (keybindings?.resetAnchor  == null || keybindings.resetAnchor .length === 0) ? ["Control", "c"] : keybindings.resetAnchor , action: ""     },
+				resetCamera : { keys: (keybindings?.resetCamera  == null || keybindings.resetCamera .length === 0) ? ["Control", "v"] : keybindings.resetCamera , action: ""     },
+                openOverlay : { keys: ["Alt"]                                                                                                                   , action: ""     },
+			}
+		);
 	};
 
+    function IsKeyBindingCompleted(
+        keybindings     : Types.T_KeyBindings,
+		keyBindingName  : keyof Types.T_KeyBindings,
+		keyPressed     ?: string,
+	) : boolean
+	{
+		const keyBinding : string[] | undefined = keybindings[keyBindingName]?.keys;
+
+		function AllOtherKeysArePressed(
+			keyBinding  : string[],
+			keyPressed ?: string,
+		) : boolean
+		{
+			return (
+				keyBinding
+				.map((keyBindingElement : string) : boolean =>
+				{
+					if (keyBindingElement === keyPressed) return (true);
+					else                                  return (input.current.keyboard.stack.has(keyBindingElement));
+				})
+				.reduce((prev : boolean, current : boolean) : boolean => { return (prev && current); }, true)
+			);
+		};
+
+		if (keyBinding && AllOtherKeysArePressed(keyBinding, keyPressed)) return ((keyPressed) ? keyBinding.includes(keyPressed) : true);
+		else                                                              return (false);
+	};
+    
 	function ResetAnchorPosition() : void
 	{
-		cameraState.current.anchor = { ...cameraState.current.initialAnchor };
-
-		Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
+        if (context.current.camera && context.current.rerenderFrame)
+        {
+            context.current.camera.anchor = { ...context.current.camera.initialAnchor };
+            context.current.rerenderFrame(context.current.canvas, context.current.camera, context.current.coordinateSystemBases_3D, context.current.modelMesh, context.current.background);
+        }
 	};
 
 	function ResetCamera() : void
 	{
-		cameraState.current.polarCoord = { ...cameraState.current.initialCamera };
+        if (context.current.camera && context.current.rerenderFrame)
+        {
+            context.current.camera.polarCoord = { ...context.current.camera.initialCamera };
+            context.current.rerenderFrame(context.current.canvas, context.current.camera, context.current.coordinateSystemBases_3D, context.current.modelMesh, context.current.background);
+        }
+	};
 
-		Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
+    function ReportCameraUpdate() : void
+	{
+		if (props.cameraDebug) 
+			props.cameraDebug(context.current.camera);
 	};
 
 	function OnDragStart() : void
     {
-        if (cameraState.current.action !== Types.E_RasterizerAction.DRAG)
+        if (event.current.action !== Types.E_RasterizerAction.DRAG)
         {
-            cameraState.current.action = Types.E_RasterizerAction.DRAG;
+            event.current.action = Types.E_RasterizerAction.DRAG;
 			ReportCameraUpdate();
 
             if (props.onStartDrag)
@@ -126,9 +216,9 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 
     function OnDragEnd() : void
     {
-        if (cameraState.current.action === Types.E_RasterizerAction.DRAG)
+        if (event.current.action === Types.E_RasterizerAction.DRAG)
 		{
-			cameraState.current.action = Types.E_RasterizerAction.NONE;
+			event.current.action = Types.E_RasterizerAction.NONE;
 			ReportCameraUpdate();
 
 			if (props.onEndDrag)
@@ -138,9 +228,9 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 
     function OnRotateStart() : void
     {
-        if (cameraState.current.action !== Types.E_RasterizerAction.ROTATE)
+        if (event.current.action !== Types.E_RasterizerAction.ROTATE)
         {
-            cameraState.current.action = Types.E_RasterizerAction.ROTATE;
+            event.current.action = Types.E_RasterizerAction.ROTATE;
 			ReportCameraUpdate();
 
             if (props.onStartRotate)
@@ -150,9 +240,9 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 
     function OnRotateEnd() : void
     {
-        if (cameraState.current.action === Types.E_RasterizerAction.ROTATE)
+        if (event.current.action === Types.E_RasterizerAction.ROTATE)
 		{
-			cameraState.current.action = Types.E_RasterizerAction.NONE;
+			event.current.action = Types.E_RasterizerAction.NONE;
 			ReportCameraUpdate();
 
 			if (props.onEndRotate)
@@ -162,18 +252,18 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 
 	function OnZoomStart() : void
     {
-        if (cameraState.current.action !== Types.E_RasterizerAction.ZOOM)
+        if (event.current.action !== Types.E_RasterizerAction.ZOOM)
         {
-            cameraState.current.action = Types.E_RasterizerAction.ZOOM;
+            event.current.action = Types.E_RasterizerAction.ZOOM;
 			ReportCameraUpdate();
         }
     };
 
     function OnZoomEnd() : void
     {
-        if (cameraState.current.action === Types.E_RasterizerAction.ZOOM)
+        if (event.current.action === Types.E_RasterizerAction.ZOOM)
 		{
-			cameraState.current.action = Types.E_RasterizerAction.NONE;
+			event.current.action = Types.E_RasterizerAction.NONE;
 			ReportCameraUpdate();
 		}
     };
@@ -183,37 +273,46 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 	function HandleMouseUp() : void
 	{
         input.current.mouse.status = Types.E_MouseStatus.UP;
+        setIsMouseDown(false);
 
-        if (cameraState.current.action !== Types.E_RasterizerAction.NONE)
+        if (event.current.action !== Types.E_RasterizerAction.NONE)
         {
-            OnDragEnd   ();
-            OnRotateEnd ();
-			OnZoomEnd   ();
+            OnDragEnd  ();
+            OnRotateEnd();
+			OnZoomEnd  ();
         }
 	};
 
-	function HandleMouseDown(e : React.MouseEvent<HTMLCanvasElement, MouseEvent>) : void
+    function HandleMouseDown(e : React.MouseEvent<HTMLDivElement, MouseEvent>) : void
 	{
 		input.current.mouse.status = Types.E_MouseStatus.DOWN;
+        setIsMouseDown(true);
 	};
 
-	function HandleKeyUp(e : KeyboardEvent) : void
+    function HandleKeyUp(e : KeyboardEvent) : void
 	{
-		if (e.key === "Control")
-			OnRotateEnd();
+        if (event.current.keyboardEnabled)
+        {
+            if      (IsKeyBindingCompleted(input.current.keyboard.keybindings, "rotateCamera", e.key)) OnRotateEnd();
+            else if (IsKeyBindingCompleted(input.current.keyboard.keybindings, "openOverlay" , e.key)) setOpenOverlay(false);
 
-		input.current.keyboard.stack.delete(e.key);
+		    input.current.keyboard.stack.delete(e.key);
+        }
 	};
 
-	function HandleKeydown(e : KeyboardEvent) : void
-	{                    
-		if      (e.key === "c" && input.current.keyboard.stack.has("Control")) ResetAnchorPosition();
-		else if (e.key === "v" && input.current.keyboard.stack.has("Control")) ResetCamera();
-
-		input.current.keyboard.stack.add(e.key);
+    function HandleKeyDown(e : KeyboardEvent) : void
+	{
+        if (event.current.keyboardEnabled)
+        {
+            if      (IsKeyBindingCompleted(input.current.keyboard.keybindings, "resetAnchor", e.key)) ResetAnchorPosition();
+            else if (IsKeyBindingCompleted(input.current.keyboard.keybindings, "resetCamera", e.key)) ResetCamera();
+            else if (IsKeyBindingCompleted(input.current.keyboard.keybindings, "openOverlay", e.key)) setOpenOverlay(true);
+    
+            input.current.keyboard.stack.add(e.key);
+        }
 	};
 
-	function HandleMouseMove(e : React.MouseEvent<HTMLCanvasElement, MouseEvent>) : void
+    function HandleMouseMove(e : React.MouseEvent<HTMLDivElement, MouseEvent>) : void
 	{
 		function RotateCamera(
 			mouseMoveX : number,
@@ -224,10 +323,10 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 			const deltaTheta   : number = (props.rotateSettings?.rotateMode === Types.E_CameraMode.INVERSE) ? rotateFactor *  mouseMoveX : rotateFactor * -mouseMoveX;
 			const deltaPhi     : number = (props.rotateSettings?.rotateMode === Types.E_CameraMode.INVERSE) ? rotateFactor * -mouseMoveY : rotateFactor *  mouseMoveY;
 
-			if (Event.RotateCamera(deltaTheta, deltaPhi, cameraState.current, props.cameraDebug))
+			if (context.current.camera && context.current.rerenderFrame && Event.RotateCamera(deltaTheta, deltaPhi, context.current.camera, props.cameraDebug))
 			{
 				OnRotateStart();
-				Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
+                context.current.rerenderFrame(context.current.canvas, context.current.camera, context.current.coordinateSystemBases_3D, context.current.modelMesh, context.current.background);
 			}
 		};
 
@@ -242,18 +341,21 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 			const deltaX     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor *  mouseMoveX : dragFactor * -mouseMoveX;
 			const deltaY     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor * -mouseMoveY : dragFactor *  mouseMoveY;
 
-			Event.DragCamera (deltaX, deltaY, cameraState.current, props.cameraDebug);
-			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
+            if (context.current.camera && context.current.rerenderFrame)
+            {
+                Event.DragCamera(deltaX, deltaY, context.current.camera, props.cameraDebug);
+                context.current.rerenderFrame(context.current.canvas, context.current.camera, context.current.coordinateSystemBases_3D, context.current.modelMesh, context.current.background);
+            }
 		}
 
 		if (input.current.mouse.status === Types.E_MouseStatus.DOWN)
 		{	
-			if      (input.current.keyboard.stack.has("Control") && cameraState.current.rotateEnabled) RotateCamera(e.movementX, e.movementY);
-			else if (cameraState.current.dragEnabled)                                                  DragAnchor  (e.movementX, e.movementY);
+			if      (IsKeyBindingCompleted(input.current.keyboard.keybindings, "rotateCamera") && event.current.rotateEnabled) RotateCamera(e.movementX, e.movementY);
+			else if (event.current.dragEnabled)                                                                                DragAnchor  (e.movementX, e.movementY);
 		}
 	};
 
-	function HandleWeel(e : React.WheelEvent<HTMLCanvasElement>) : void
+	function HandleWeel(e : React.WheelEvent<HTMLDivElement>) : void
 	{
 		function GetMinZoom() : number | undefined
 		{
@@ -287,36 +389,33 @@ export const Component = (props : Types.T_Props) : JSX.Element =>
 		const userZoomFactor : number = props.zoomSettings?.zoomFactor ?? DEFAULT_ZOOM_FACTOR;
 		const zoomFactor     : number = (e.deltaY > 0) ? userZoomFactor : -userZoomFactor;
 
-		if (cameraState.current.zoomEnabled && Event.ZoomCamera(zoomFactor, cameraState.current, GetMinZoom(), GetMaxZoom(), props.cameraDebug))
+		if (context.current.camera && context.current.rerenderFrame && event.current.zoomEnabled && Event.ZoomCamera(zoomFactor, context.current.camera, GetMinZoom(), GetMaxZoom(), props.cameraDebug))
 		{
 			OnZoomStart();
-			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
+            context.current.rerenderFrame(context.current.canvas, context.current.camera, context.current.coordinateSystemBases_3D, context.current.modelMesh, context.current.background);
 		}
 	};
 
-	function HandleResizeResize() : void
-	{
-		if (ref.current)
-		{
-			ref.current.width  = ref.current.clientWidth;
-			ref.current.height = ref.current.clientHeight;
-
-			Utils.RenderFrame(ref.current, Variables.coordinateSystemBases_3D, mesh.current, cameraState.current, RASTERIZER_BACKGROUND_COLOR);
-		}
-	};
-	
-	return (
-		<canvas
-			ref          = {ref}
-			className    = {`${Style.canvasContainer} ${MouseDown_ToClassName()}`}
-			onWheel      = {HandleWeel}
-			onMouseDown  = {HandleMouseDown}
-			onMouseUp    = {HandleMouseUp}
-			onMouseMove  = {HandleMouseMove}
-			onMouseLeave = {HandleMouseUp}
-		/>
-	);
+    return (
+        <RasterizerContext.Provider value={context.current}>
+            <div className={Style.Container}>
+                <div
+                    className    = {`${Style.Rasterizer} ${MouseDown_ToClassName()}`}
+                    onMouseLeave = {HandleMouseUp}
+                    onMouseUp    = {HandleMouseUp}
+                    onMouseDown  = {HandleMouseDown}
+                    onMouseMove  = {HandleMouseMove}
+                    onWheel      = {HandleWeel}
+                >
+                    <UIRasterizer.Component/>
+                </div>
+                {
+                    opentOverlay &&
+                    <div className={Style.Overlay}>
+                        <Overlay.Component keyBindings={input.current.keyboard.keybindings}/>
+                    </div>
+                }
+            </div>
+        </RasterizerContext.Provider>
+    );
 };
-
-export * as Utils from "./utils";
-export * as Types from "./types";

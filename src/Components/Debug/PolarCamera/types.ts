@@ -1,4 +1,4 @@
-import * as RasterizerDisplay from "../../RasterizerDisplay";
+import * as RasterizerDisplay from "../../RasterizerDisplay/Rasterizer";
 
 
 export type T_Props =

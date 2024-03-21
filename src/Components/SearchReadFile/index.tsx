@@ -12,8 +12,6 @@ export const Component = (props:Types.T_Props) =>
 
 	const [fileName, setFileName] = React.useState<string>("");
 
-	React.useEffect(() => { console.log(fileName) }, [fileName]);
-
 	function ReadContentOnLoad(fileReader:FileReader):void
 	{
 		const fileContent:string|ArrayBuffer|null = fileReader.result;

@@ -53,7 +53,11 @@ export type T_Header =
 
 export type T_ResizeSetting =
 {
-    offset : number;
+    offset  : number;
+    left   ?: boolean;
+    top    ?: boolean;
+    right  ?: boolean;
+    bottom ?: boolean;
 };
 
 export type T_Window =

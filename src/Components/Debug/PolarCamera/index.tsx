@@ -5,7 +5,7 @@ import      Style from "./style.module.scss";
 export const Conponment = (props:Types.T_Props) =>
 {
 	return (
-		<table className={Style.Table}>
+		/*<table className={Style.Table}>
 			<tbody>
 				<tr><th colSpan={2}>Mode</th></tr>
 				<tr><td colSpan={2}>{(props.camera) ? props.camera.action : '-'}</td></tr>
@@ -20,6 +20,7 @@ export const Conponment = (props:Types.T_Props) =>
 				<tr><td>Raduis </td><td>{(props.camera) ? props.camera.polarCoord.radius.toFixed(2) : '-'}</td></tr>
 				<tr><td>&phi;  </td><td>{(props.camera) ? props.camera.polarCoord.phi   .toFixed(2) : '-'}</td></tr>
 			</tbody>
-		</table>
+		</table>*/
+		<></>
 	);
 };

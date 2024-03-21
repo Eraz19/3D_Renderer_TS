@@ -13,9 +13,10 @@ export function Component(props : Types.T_Props) : JSX.Element
 {
     const [cursor, setCursor] = React.useState<Types.E_Cursor>(Types.E_Cursor.NONE);
 
-    const timer = React.useRef<NodeJS.Timeout>();
-    const ref   = React.useRef<HTMLDivElement>(null);
-    const input = React.useRef<Types.T_WindowInput>(
+    const timer     = React.useRef<NodeJS.Timeout>();
+    const windowRef = React.useRef<HTMLDivElement>(null);
+    const headerRef = React.useRef<HTMLDivElement>(null);
+    const input     = React.useRef<Types.T_WindowInput>(
         {
             mouse:
             {
@@ -56,6 +57,12 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     /**************************** Utils ****************************/
 
+    function ResetTimer() : void 
+    {
+        clearTimeout(timer.current);
+        timer.current = undefined;
+    };
+
     function HasAHeaderClassName() : string
     {
         if (props.header) return (Style.WithHeader);
@@ -83,36 +90,36 @@ export function Component(props : Types.T_Props) : JSX.Element
         input.current.mouse.cursor = value;
     };
 
-    function UpdateResizeCursor(e : React.MouseEvent<HTMLDivElement>) : void
+    function UpdateResizeCursor(e : MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) : void
     {
         const offset : number = props.resizeSettings?.offset ?? DEFAULT_RESIZE_OFFSET;
     
-        if (ref.current && input.current.mouse.status === Types.E_MouseStatus.UP && windowState.current.resizeEnabled)
+        if (windowRef.current && input.current.mouse.status === Types.E_MouseStatus.UP && windowState.current.resizeEnabled)
         {
-            const windowRect : DOMRect = ref.current.getBoundingClientRect();
+            const windowRect : DOMRect = windowRef.current.getBoundingClientRect();
 
-            if (e.clientX <= (windowRect.left + offset))
+            if (e.clientX <= (windowRect.left + offset) && (props.resizeSettings?.left ?? true))
             {
-                if      (e.clientY <= (windowRect.top + offset))    UpdateCursorValue(Types.E_Cursor.LEFT_TOP);
-                else if (e.clientY >= (windowRect.bottom - offset)) UpdateCursorValue(Types.E_Cursor.LEFT_BOTTOM);
-                else                                                UpdateCursorValue(Types.E_Cursor.LEFT);   
+                if      (e.clientY <= (windowRect.top    + offset) && (props.resizeSettings?.top    ?? true)) UpdateCursorValue(Types.E_Cursor.LEFT_TOP);
+                else if (e.clientY >= (windowRect.bottom - offset) && (props.resizeSettings?.bottom ?? true)) UpdateCursorValue(Types.E_Cursor.LEFT_BOTTOM);
+                else                                                                                          UpdateCursorValue(Types.E_Cursor.LEFT);   
 
                 OnResizeStart();
             }
-            else if (e.clientX >= (windowRect.right - offset))
+            else if (e.clientX >= (windowRect.right - offset) && (props.resizeSettings?.right ?? true))
             {
-                if      (e.clientY <= (windowRect.top + offset))    UpdateCursorValue(Types.E_Cursor.RIGHT_TOP);
-                else if (e.clientY >= (windowRect.bottom - offset)) UpdateCursorValue(Types.E_Cursor.RIGHT_BOTTOM);
-                else                                                UpdateCursorValue(Types.E_Cursor.RIGHT);
+                if      (e.clientY <= (windowRect.top    + offset) && (props.resizeSettings?.top    ?? true)) UpdateCursorValue(Types.E_Cursor.RIGHT_TOP);
+                else if (e.clientY >= (windowRect.bottom - offset) && (props.resizeSettings?.bottom ?? true)) UpdateCursorValue(Types.E_Cursor.RIGHT_BOTTOM);
+                else                                                                                          UpdateCursorValue(Types.E_Cursor.RIGHT);
 
                 OnResizeStart();
             }
-            else if (e.clientY <= (windowRect.top + offset))
+            else if (e.clientY <= (windowRect.top + offset) && (props.resizeSettings?.top ?? true))
             {
                 UpdateCursorValue(Types.E_Cursor.TOP);
                 OnResizeStart();
             }
-            else if (e.clientY >= (windowRect.bottom - offset))
+            else if (e.clientY >= (windowRect.bottom - offset) && (props.resizeSettings?.bottom ?? true))
             {
                 UpdateCursorValue(Types.E_Cursor.BOTTOM);
                 OnResizeStart();
@@ -189,21 +196,25 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     /**************************** Events Handler ****************************/
 
-    function HandleMouseUp() : void
+    function HandleMouseUp(e : MouseEvent) : void
     {
         input.current.mouse.status = Types.E_MouseStatus.UP;
-        clearTimeout(timer.current);
+        UpdateResizeCursor(e);
+        ResetTimer();
     };
 
-    function HandleMouseDown() : void
+    function HandleMouseDown(isInHeader : boolean) : void
     {
         input.current.mouse.status = Types.E_MouseStatus.DOWN;
 
-        timer.current = setTimeout(() =>
+        if (timer.current == null)
         {
-            if (input.current.mouse.cursor !== Types.E_Cursor.NONE && windowState.current.moveEnabled)
-                OnMoveStart();
-        }, 1000);
+            timer.current = setTimeout(() =>
+            {   
+                if      (!isInHeader && input.current.mouse.cursor !== Types.E_Cursor.NONE       && windowState.current.moveEnabled) OnMoveStart();
+                else if (isInHeader  && windowState.current.action === Types.E_WindowAction.NONE && windowState.current.moveEnabled) OnMoveStart();
+            }, 1000);            
+        }
     };
 
     function HandleMouseMove(e : MouseEvent) : void
@@ -212,27 +223,25 @@ export function Component(props : Types.T_Props) : JSX.Element
         {
             function UpdateWindowHorizontalMove(xOffset : number) : void
             {
-                if (ref.current)
+                if (windowRef.current)
                 {
-                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(ref.current);
+                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(windowRef.current);
                     const left                  : number              = parseInt(resizableElementStyle.left, 10);
                     
-                    ref.current.style.left = `${left  + xOffset}px`;
+                    windowRef.current.style.left = `${left  + xOffset}px`;
                 }
             };
     
             function UpdateWindowVerticalMove(xOffset : number) : void
             {
-                if (ref.current)
+                if (windowRef.current)
                 {
-                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(ref.current);
-                    const top                  : number              = parseInt(resizableElementStyle.top , 10);
+                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(windowRef.current);
+                    const top                  : number               = parseInt(resizableElementStyle.top , 10);
                     
-                    ref.current.style.top = `${top  + xOffset}px`;
+                    windowRef.current.style.top = `${top  + xOffset}px`;
                 }
             };
-    
-            clearTimeout(timer.current);
 
             UpdateWindowHorizontalMove(e.movementX);
             UpdateWindowVerticalMove  (e.movementY)
@@ -242,49 +251,49 @@ export function Component(props : Types.T_Props) : JSX.Element
         {
             function UpdateWindowLeftSize(xOffset : number) : void
             {
-                if (ref.current)
+                if (windowRef.current)
                 {
-                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(ref.current);
+                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(windowRef.current);
                     const left                  : number              = parseInt(resizableElementStyle.left , 10);
                     const width                 : number              = parseInt(resizableElementStyle.width, 10);
                     
-                    ref.current.style.left  = `${left  + xOffset}px`;
-                    ref.current.style.width = `${width - xOffset}px`;
+                    windowRef.current.style.left  = `${left  + xOffset}px`;
+                    windowRef.current.style.width = `${width - xOffset}px`;
                 }
             };
     
             function UpdateWindowRightSize(xOffset : number) : void
             {
-                if (ref.current)
+                if (windowRef.current)
                 {
-                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(ref.current);
+                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(windowRef.current);
                     const width                 : number              = parseInt(resizableElementStyle.width, 10);
     
-                    ref.current.style.width = `${width + xOffset}px`;
+                    windowRef.current.style.width = `${width + xOffset}px`;
                 }
             };
     
             function UpdateWindowTopSize(yOffset : number) : void
             {
-                if (ref.current)
+                if (windowRef.current)
                 {
-                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(ref.current);
+                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(windowRef.current);
                     const top                   : number              = parseInt(resizableElementStyle.top   , 10);
                     const height                : number              = parseInt(resizableElementStyle.height, 10);
                     
-                    ref.current.style.top   = `${top    + yOffset}px`;
-                    ref.current.style.height = `${height - yOffset}px`;
+                    windowRef.current.style.top   = `${top    + yOffset}px`;
+                    windowRef.current.style.height = `${height - yOffset}px`;
                 }
             };
     
             function UpdateWindowBottomSize(yOffset : number) : void
             {
-                if (ref.current)
+                if (windowRef.current)
                 {
-                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(ref.current);
+                    const resizableElementStyle : CSSStyleDeclaration = window.getComputedStyle(windowRef.current);
                     const height                : number              = parseInt(resizableElementStyle.height, 10);
     
-                    ref.current.style.height = `${height + yOffset}px`;
+                    windowRef.current.style.height = `${height + yOffset}px`;
                 }
             };
     
@@ -324,8 +333,6 @@ export function Component(props : Types.T_Props) : JSX.Element
                 UpdateWindowBottomSize(yOffset);
             };
 
-            clearTimeout(timer.current);
-
             if      (input.current.mouse.cursor === Types.E_Cursor.LEFT        ) UpdateWindowLeftSize       (e.movementX);
             else if (input.current.mouse.cursor === Types.E_Cursor.RIGHT       ) UpdateWindowRightSize      (e.movementX);
             else if (input.current.mouse.cursor === Types.E_Cursor.TOP         ) UpdateWindowTopSize        (e.movementY);
@@ -336,6 +343,8 @@ export function Component(props : Types.T_Props) : JSX.Element
             else if (input.current.mouse.cursor === Types.E_Cursor.RIGHT_BOTTOM) UpdateWindowRightBottomSize(e.movementX, e.movementY);
         };
 
+        ResetTimer();
+
         if (input.current.mouse.status === Types.E_MouseStatus.DOWN)
         {
             if      (windowState.current.action === Types.E_WindowAction.MOVE  ) MoveWindow  (e);
@@ -345,17 +354,22 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     return (
         <div
-            ref          = {ref}
-            className    = {`${Style.Container} ${FromResizeSide_ToClassName(cursor)} ${HasAHeaderClassName()}`}
-            onMouseDown  = {HandleMouseDown}
-            onMouseUp    = {HandleMouseUp}
-            onMouseMove  = {UpdateResizeCursor}
-            style        = {WindowStyle()}
+            ref         = {windowRef}
+            className   = {`${Style.Container} ${FromResizeSide_ToClassName(cursor)}`}
+            onMouseMove = {UpdateResizeCursor}
+            onMouseDown = {() => { HandleMouseDown(false); }}
+            style       = {WindowStyle()}
         >
             <div
-                className={Style.Header}
-            />
-            <div className={Style.Body}>
+                ref         = {headerRef}
+                className   = {Style.Header}
+                onMouseDown = {() => { HandleMouseDown(true); }}
+            >
+                {props.header?.children}
+            </div>
+            <div
+                className = {`${Style.Body} ${HasAHeaderClassName()}`}
+            >
                 {props.children}
             </div>
         </div>

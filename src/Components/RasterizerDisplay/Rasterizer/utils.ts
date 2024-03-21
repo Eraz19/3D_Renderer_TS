@@ -1,11 +1,12 @@
-import * as Types      from "./types";
-import * as Polygone   from "../../Utils/Shapes/Polygone";
-import * as Line       from "../../Utils/Shapes/Line";
-import * as Rasterizer from "../../Utils/Rasterizer";
-import * as Matrix     from "../../Utils/Matrix";
-import * as Coord      from "../../Utils/Coord";
-import * as Color      from "../../Utils/Color";
-import * as Vector     from "../../Utils/Vector";
+import * as Polygone   from "../../../Utils/Shapes/Polygone";
+import * as Line       from "../../../Utils/Shapes/Line";
+import * as Rasterizer from "../../../Utils/Rasterizer";
+import * as Matrix     from "../../../Utils/Matrix";
+import * as Coord      from "../../../Utils/Coord";
+import * as Color      from "../../../Utils/Color";
+import * as Vector     from "../../../Utils/Vector";
+
+import * as Types from "./types";
 
 
 function FillPixelBuffer(
@@ -18,7 +19,7 @@ function FillPixelBuffer(
 	// We need to multiply by 4 the all surface because each pixel is encode on a RGBA palette
 	const bufferIndex : number = (coord.x + coord.y * context.canvas.width) * 4;
 
-	if (bufferIndex >= 0 && bufferIndex < buffer.length - 4)
+	if (bufferIndex >= 0 && bufferIndex <= buffer.length - 4)
 	{
 		buffer[bufferIndex + 0] = color.red;
 		buffer[bufferIndex + 1] = color.green;
@@ -68,8 +69,8 @@ function DrawCoordSystemOnCanvas(
 		color   : Color.RGB.Types.T_Color,
 	): void
 	{
-		const lineStartCoord  : Coord.Types.T_Coord2D   = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace(line.start, camera.polarCoord.radius);
-		const lineEndCoord 	  : Coord.Types.T_Coord2D   = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace(line.end  , camera.polarCoord.radius);
+		const lineStartCoord  : Coord.Types.T_Coord2D   = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.start, camera.polarCoord.radius);
+		const lineEndCoord 	  : Coord.Types.T_Coord2D   = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.end  , camera.polarCoord.radius);
 		const linePointsCoord : Coord.Types.T_Coord2D[] = Line.Utils.GetLinePointsCoord({ start: lineStartCoord, end: lineEndCoord });
 
 		DrawLinePointsOnCanvas(linePointsCoord, color);
@@ -107,9 +108,9 @@ function DrawMeshOnCanvas(
 	function DrawPolygoneOnCanvas(
 		polygone : Polygone.Types.T_Polygone3D,
 		color    : Color.RGB.Types.T_Color,
-	):void
+	) : void
 	{
-		const polygoneCoord       : Coord.Types.T_Coord2D[] = polygone.map((coord : Coord.Types.T_Coord3D): Coord.Types.T_Coord2D => { return (Rasterizer.Utils.FromCameraSpace_ToDisplaySpace(coord, camera.polarCoord.radius)); });
+		const polygoneCoord       : Coord.Types.T_Coord2D[] = Rasterizer.Utils.PolygoneFromCameraSpace_ToDisplaySpace_Polygone(polygone, camera.polarCoord.radius);
 		const polygonePointsCoord : Coord.Types.T_Coord2D[] = Polygone.Utils.GetPolygonePointsCoord(polygoneCoord);
 
 		DrawPolygonePointsOnCanvas(polygonePointsCoord, color);
@@ -136,13 +137,13 @@ export function ExtractCameraToTopVector_FromCameraToWorldMatrix(cameraToWorldMa
 	return ([cameraToWorldMatrix[2][0],cameraToWorldMatrix[2][1],cameraToWorldMatrix[2][2]]);
 };
 
-export function RenderFrame(
-	canvas                : HTMLCanvasElement|null,
-	coordinateSystemBases : Rasterizer.Types.T_CoordinateBases_3D,
-	mesh                  : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
-	camera                : Types.T_CameraState,
-	background           ?: Color.RGB.Types.T_Color,
-): void
+export function RedrawFrame(
+	canvas                  : HTMLCanvasElement | undefined,
+	camera                  : Types.T_CameraState,
+	coordinateSystemBases  ?: Rasterizer.Types.T_CoordinateBases_3D,
+	mesh                   ?: Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
+	background             ?: Color.RGB.Types.T_Color,
+) : void
 {
 	if (canvas != null)
 	{
@@ -150,18 +151,22 @@ export function RenderFrame(
 		
 		if (context)
 		{
-			const imagedata                     : ImageData                                                       = context.createImageData(context.canvas.width, context.canvas.height);
-			const cameraToWorldMatrix           : Matrix.Types.T_Matrix_4_4                                       = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
-			const worldToCameraMatrix           : Matrix.Types.T_Matrix_4_4                                       = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
-			const coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D                           = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
-			const meshInCameraSpace             : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh            (worldToCameraMatrix, mesh                 );
+			const imagedata           : ImageData                 = context.createImageData(context.canvas.width, context.canvas.height);
+			const cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
+			const worldToCameraMatrix : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+			
+			let coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D | undefined                           = undefined;
+			let meshInCameraSpace             : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[] | undefined = undefined;
 
-			if (background)
-				FillCanvasBackground(imagedata.data, context, background);
+			if (coordinateSystemBases) coordinateSystemInCameraSpace = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
+			if (mesh)                  meshInCameraSpace             = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh            (worldToCameraMatrix, mesh);      
+			if (background)            FillCanvasBackground(imagedata.data, context, background);
 
-			DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace, camera);
-			DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace            , camera);
-			context.putImageData   (imagedata, 0, 0);
+			if (coordinateSystemInCameraSpace) DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace, camera);
+			if (meshInCameraSpace)             DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace            , camera);
+
+			console.log("redrawFrame: ", imagedata.data);
+			context.putImageData(imagedata, 0, 0);
 
 			camera.cameraToWorldMatrix  = cameraToWorldMatrix;
 			camera.worldToCameraMatrix  = worldToCameraMatrix;

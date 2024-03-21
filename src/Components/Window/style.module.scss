@@ -2,15 +2,14 @@ $window-width         : var(--window-width        , 300px    );
 $window-height        : var(--window-height       , 300px    ); 
 $window-left          : var(--window-left         , 100px    );   
 $window-top           : var(--window-top          , 100px    );    
-$window-border-color  : var(--window-border-color , #5e5e5e);
-$window-border-width  : var(--window-border-width , 1px      );
+$window-border-color  : var(--window-border-color , #444444);
+$window-border-width  : var(--window-border-width , 3px      );
 $window-z-index       : var(--window-z-index      , 0        );
 $window-header-height : var(--window-header-height, 0px      );
 
 
 .Container
 {
-    border  : $window-border-color solid $window-border-width;
     width   : $window-width;
     height  : $window-height;
     left    : $window-left;
@@ -18,7 +17,6 @@ $window-header-height : var(--window-header-height, 0px      );
     z-index : $window-z-index;
 
     position       : fixed;
-    box-sizing     : border-box;
     cursor         : default;
  
     &.Left         { cursor : w-resize;  };   
@@ -31,8 +29,6 @@ $window-header-height : var(--window-header-height, 0px      );
     &.Right_Bottom { cursor : se-resize; };       
     &.Cross        { cursor : move;      };
 
-    &.WithHeader { border-top: none; };
-
     & > .Header
     {
         height     : $window-header-height;
@@ -43,7 +39,12 @@ $window-header-height : var(--window-header-height, 0px      );
 
     & > .Body
     {
-        width  : 100%;
+        border : $window-border-color solid $window-border-width;
         height : calc(100% - $window-header-height); 
+
+        &.WithHeader { border-top: none; };
+
+        box-sizing : border-box;
+        width      : 100%;
     };
 };

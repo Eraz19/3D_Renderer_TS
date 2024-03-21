@@ -1,10 +1,24 @@
-.canvasContainer
+.Container
 {
-	width  : 100%;
-	height : 100%;
+    position : relative;
+    width    : 100%;
+    height   : 100%;
 
-	&.MouseDown
-	{
-		cursor : move;
-	};
+    & > .Rasterizer
+    {
+        width    : 100%;
+        height   : 100%;
+    
+        &.MouseDown { cursor : move; };
+    };
+    
+    & > .Overlay
+    {
+        position   : absolute;
+        width      : 100%;
+        height     : 100%;
+        top        : 0; 
+        left       : 0;
+        background : rgba(0, 0, 0, 0.5);
+    };
 };

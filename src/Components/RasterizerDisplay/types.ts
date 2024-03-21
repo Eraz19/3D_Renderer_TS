@@ -1,9 +1,7 @@
-import * as PolarCamera       from "../../Utils/Rasterizer/PolarCamera";
-import * as Polygone          from "../../Utils/Shapes/Polygone";
-import * as Coord             from "../../Utils/Coord";
-import * as Matrix            from "../../Utils/Matrix";
-import * as Vector            from "../../Utils/Vector";
-import * as RasterizerDisplay from "../RasterizerDisplay";
+import * as PolarCamera from "../../Utils/Rasterizer/PolarCamera";
+import * as Polygone    from "../../Utils/Shapes/Polygone";
+
+import * as UIRasterizerTypes from "./Rasterizer/types";
 
 
 export enum E_CameraMode
@@ -11,7 +9,6 @@ export enum E_CameraMode
 	NORMAL,
 	INVERSE,
 };
-
 export enum E_RasterizerAction
 {
 	NONE,
@@ -19,7 +16,6 @@ export enum E_RasterizerAction
 	DRAG,
 	ROTATE,
 };
-
 export enum E_MouseStatus
 {
     DOWN,
@@ -31,66 +27,76 @@ export type T_MouseInput =
 {
     status : E_MouseStatus;
 };
-
+export type T_KeyBinding =
+{
+    keys   : string[];
+    action : string;
+};
+export type T_KeyBindings =
+{
+	rotateCamera ?: T_KeyBinding;
+    dragCamera   ?: T_KeyBinding;
+	resetAnchor  ?: T_KeyBinding;
+	resetCamera  ?: T_KeyBinding;
+    openOverlay  ?: T_KeyBinding;
+};
 export type T_KeyboardInput =
 {
-	stack : Set<string>;
+	stack       : Set<string>;
+	keybindings : T_KeyBindings;
 };
-
-export type T_RasterizerInput =
+export type T_Input =
 {
     mouse    : T_MouseInput;
 	keyboard : T_KeyboardInput;
 };
-
-export type T_CameraState = PolarCamera.Types.T_PolarCamera &
+export type T_Event =
 {
-	action                : E_RasterizerAction;
-	dragEnabled           : boolean;
-	rotateEnabled         : boolean;
-	zoomEnabled           : boolean;
-	initialAnchor         : Coord.Types.T_Coord3D;
-	initialCamera         : PolarCamera.Types.T_PolarCoordSystem;
-	cameraToWorldMatrix  ?: Matrix.Types.T_Matrix_4_4;
-	worldToCameraMatrix  ?: Matrix.Types.T_Matrix_4_4;
-	cameraToAnchorVector ?: Vector.Types.T_Vec3D;
-	cameraToTopVector    ?: Vector.Types.T_Vec3D;
-	cameraToSideVector   ?: Vector.Types.T_Vec3D;
+    action          : E_RasterizerAction;
+    dragEnabled     : boolean;
+    rotateEnabled   : boolean;
+    zoomEnabled     : boolean;
+    keyboardEnabled : boolean;
 };
 
 
-export type T_ZoomSetting =
+export type T_KeyBindingsSetting = {[P in keyof Omit<T_KeyBindings, "openOverlay" | "dragCamera">]?: string[]};
+export type T_KeyboardSettings   =
 {
+    enabled     ?: boolean;
+    keybindings ?: T_KeyBindingsSetting;
+};
+export type T_ZoomSetting      =
+{
+    enabled    ?: boolean;
 	maxRadius  ?: number;
 	minRadius  ?: number;
 	zoomFactor ?: number;
 };
-
-export type T_DragSettings =
+export type T_DragSettings     =
 {
+    enabled    ?: boolean;
 	dragMode   ?: E_CameraMode;
 	dragFactor ?: number;  
 };
-
-export type T_RotateSettings =
+export type T_RotateSettings   =
 {
+    enabled      ?: boolean;
 	rotateMode   ?: E_CameraMode;
 	rotateFactor ?: number;  
 };
 
 export type T_Props =
 {
-	defaultCamera   : PolarCamera.Types.T_PolarCamera;
-	mesh            : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[];
-	dragEnabled     : boolean;
-	rotateEnabled   : boolean;
-	zoomEnabled     : boolean;
-	dragSettings   ?: T_DragSettings;
-	rotateSettings ?: T_RotateSettings;
-	zoomSettings   ?: T_ZoomSetting;
-	onStartDrag    ?: () => void;
-    onEndDrag      ?: () => void;
-	onStartRotate  ?: () => void;
-    onEndRotate    ?: () => void;
-	cameraDebug    ?: React.Dispatch<React.SetStateAction<RasterizerDisplay.Types.T_CameraState | undefined>>;
+	defaultCamera     : PolarCamera.Types.T_PolarCamera;
+	mesh              : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[];
+	dragSettings     ?: T_DragSettings;
+	rotateSettings   ?: T_RotateSettings;
+	zoomSettings     ?: T_ZoomSetting;
+	keyboardSettings ?: T_KeyboardSettings,
+	onStartDrag      ?: () => void;
+    onEndDrag        ?: () => void;
+	onStartRotate    ?: () => void;
+    onEndRotate      ?: () => void;
+	cameraDebug      ?: React.Dispatch<React.SetStateAction<UIRasterizerTypes.T_CameraState | undefined>>;
 };

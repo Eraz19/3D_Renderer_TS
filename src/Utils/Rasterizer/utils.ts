@@ -72,7 +72,15 @@ export function FromWorldSpace_ToCameraSpace_Mesh(
 	);
 };
 
-export function FromCameraSpace_ToDisplaySpace(
+export function PolygoneFromCameraSpace_ToDisplaySpace_Polygone(
+	polygone     : Polygone.Types.T_Polygone3D,
+	cameraRadius : number,
+) : Coord.Types.T_Coord2D[]
+{
+	return (polygone.map((coord : Coord.Types.T_Coord3D) : Coord.Types.T_Coord2D => { return (FromCameraSpace_ToDisplaySpace_Coord(coord, cameraRadius)); }));
+};
+
+export function FromCameraSpace_ToDisplaySpace_Coord(
 	coord        : Coord.Types.T_Coord3D,
 	cameraRadius : number,
 ): Coord.Types.T_Coord2D

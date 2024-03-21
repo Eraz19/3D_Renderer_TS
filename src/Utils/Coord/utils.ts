@@ -86,3 +86,47 @@ export function DeepCopy(coord : Types.T_Coord  ) : Types.T_Coord
 	else if (IsCoord_4(coord)) return (DeepCopy_4(coord));
 	else                       return ({} as never);
 };
+
+function IsEqual_2(
+	coord1 : Types.T_Coord2D,
+	coord2 : Types.T_Coord2D,
+) : boolean
+{
+	return (coord1.x === coord2.x && coord1.y === coord2.y);
+};
+function IsEqual_3(
+	coord1 : Types.T_Coord3D,
+	coord2 : Types.T_Coord3D,
+) : boolean
+{
+	return (coord1.x === coord2.x && coord1.y === coord2.y && coord1.z === coord2.z);
+};
+function IsEqual_4(
+	coord1 : Types.T_Coord4D,
+	coord2 : Types.T_Coord4D,
+) : boolean
+{
+	return (coord1.x === coord2.x && coord1.y === coord2.y && coord1.z === coord2.z && coord1.w === coord2.w);
+};
+export function IsEqual(
+	coord1 : Types.T_Coord2D,
+	coord2 : Types.T_Coord2D,
+) : boolean
+export function IsEqual(
+	coord1 : Types.T_Coord3D,
+	coord2 : Types.T_Coord3D,
+) : boolean
+export function IsEqual(
+	coord1 : Types.T_Coord4D,
+	coord2 : Types.T_Coord4D,
+) : boolean
+export function IsEqual(
+	coord1 : Types.T_Coord,
+	coord2 : Types.T_Coord,
+) : boolean
+{
+	if      (IsCoord_2(coord1) && IsCoord_2(coord2)) return (IsEqual_2(coord1, coord2));
+	else if (IsCoord_3(coord1) && IsCoord_3(coord2)) return (IsEqual_3(coord1, coord2));
+	else if (IsCoord_4(coord1) && IsCoord_4(coord2)) return (IsEqual_4(coord1, coord2));
+	else                                             return ({} as never);
+};

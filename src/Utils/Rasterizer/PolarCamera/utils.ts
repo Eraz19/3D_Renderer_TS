@@ -51,6 +51,14 @@ export function GenerateCamera_ToWorldMatrix(camera : Types.T_PolarCamera): Matr
 	);
 };
 
+export function IsEqual(
+	polarCamera1 : Types.T_PolarCoordSystem,
+	polarCamera2 : Types.T_PolarCoordSystem,
+) : boolean
+{
+	return (polarCamera1.phi === polarCamera2.phi && polarCamera1.radius === polarCamera2.radius && polarCamera1.theta === polarCamera2.theta);
+};
+
 export function DeepCopy(camera : Types.T_PolarCamera) : Types.T_PolarCamera
 {
 	return (
