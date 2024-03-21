@@ -32,6 +32,7 @@ export function Component() : JSX.Element
 		};
 		
 		AddEvents(context.canvas);
+		context.rerenderFrame = Utils.RedrawFrame;
 		//RenderLoop();
 		
 		return (() => { RemoveEvents(); });

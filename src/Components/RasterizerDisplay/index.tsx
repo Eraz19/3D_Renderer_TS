@@ -115,7 +115,7 @@ export function Component(props : Types.T_Props) : JSX.Element
                 cameraSnapShot: PolarCamera.Utils.DeepCopy(props.defaultCamera),
                 frameTime     : 1 / NUMBER_OF_FRAME_PER_SECOND,
                 renderStart   : undefined,
-                renderEnd     : undefined
+                renderEnd     : undefined,
             }
         );
     };
