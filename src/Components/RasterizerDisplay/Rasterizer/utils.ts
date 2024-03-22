@@ -9,6 +9,34 @@ import * as Vector     from "../../../Utils/Vector";
 import * as Types from "./types";
 
 
+function UpdateCamera(
+	camera              : Types.T_CameraState,
+	cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4,
+	worldToCameraMatrix : Matrix.Types.T_Matrix_4_4,
+) : void
+{
+	function ExtractCameraToAnchorVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+	{
+		return ([cameraToWorldMatrix[0][0],cameraToWorldMatrix[0][1],cameraToWorldMatrix[0][2]]);
+	};
+	
+	function ExtractCameraToSideVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+	{
+		return ([cameraToWorldMatrix[1][0],cameraToWorldMatrix[1][1],cameraToWorldMatrix[1][2]]);
+	};
+	
+	function ExtractCameraToTopVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+	{
+		return ([cameraToWorldMatrix[2][0],cameraToWorldMatrix[2][1],cameraToWorldMatrix[2][2]]);
+	};
+
+	camera.cameraToWorldMatrix  = cameraToWorldMatrix;
+	camera.worldToCameraMatrix  = worldToCameraMatrix;
+	camera.cameraToAnchorVector = ExtractCameraToAnchorVector_FromCameraToWorldMatrix(worldToCameraMatrix);
+	camera.cameraToSideVector   = ExtractCameraToSideVector_FromCameraToWorldMatrix  (worldToCameraMatrix);
+	camera.cameraToTopVector    = ExtractCameraToTopVector_FromCameraToWorldMatrix   (worldToCameraMatrix);
+};
+
 function RemoveLinePartOutsideOfCanvas(
 	line       : Line.Types.T_Line3D,
 	canvasSize : Types.T_CanvasSize,
@@ -121,7 +149,7 @@ function FillPixelBuffer(
 	}
 };
 
-function FillCanvasBackground(
+function RenderCanvasBackground(
 	buffer  : Uint8ClampedArray,
 	context : CanvasRenderingContext2D,
 	color   : Color.RGB.Types.T_Color,
@@ -134,127 +162,82 @@ function FillCanvasBackground(
 	}
 };
 
-function DrawCoordSystemOnCanvas(
-	buffer                : Uint8ClampedArray,
+function GetLinesToRender(
 	context               : CanvasRenderingContext2D,
-	coordinateSystemBases : Rasterizer.Types.T_CoordinateBases_3D,
+	coordinateSystemBases : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[],
 	camera                : Rasterizer.PolarCamera.Types.T_PolarCamera,
-): void
+): (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[]
 {
-	function DrawLinePointsOnCanvas(
-		linePointsCoord : Coord.Types.T_Coord2D[],
-		color           : Color.RGB.Types.T_Color,
-	): void
+	function LineFromCameraSpace_ToDisplaySpace(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
 	{
-		linePointsCoord.map((linePointCoord:Coord.Types.T_Coord2D): void =>
-		{
-			FillPixelBuffer(
-				buffer,
-				context,
-				linePointCoord,
-				color,
-			);
-		});	
-	};
-
-	function LineFromCameraSpace_ToDisplaySpace(
-		line    : Line.Types.T_ColoredLine<Line.Types.T_Line3D>,
-		context : CanvasRenderingContext2D,
-	): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
-	{
-		const canvasSize : Types.T_CanvasSize = { width: context.canvas.clientWidth, height: context.canvas.clientHeight };
-
-		const lineStartCoord : Coord.Types.T_Coord3D      = Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height);
-		const lineEndCoord 	 : Coord.Types.T_Coord3D      = Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height);
-		const lineInDisplay  : Line.Types.T_Line3D | null = RemoveLinePartOutsideOfCanvas({ start: lineStartCoord, end: lineEndCoord }, canvasSize);
+		const lineInDisplay : Line.Types.T_Line3D | null = RemoveLinePartOutsideOfCanvas(
+			{
+				start: Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height),
+				end  : Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height),
+			},
+			{
+				width : context.canvas.clientWidth,
+				height: context.canvas.clientHeight,
+			}
+		);
 		
 		if (lineInDisplay) return ({ color: line.color, coord: lineInDisplay });
 		else               return (null);
 	};
 
-	coordinateSystemBases
-	.map   ((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null => { return (LineFromCameraSpace_ToDisplaySpace(line, context)); })
-	.filter((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : boolean => { return (line != null); })
-	.sort  ((
+	return (coordinateSystemBases.map(LineFromCameraSpace_ToDisplaySpace));
+};
+
+function RenderAllFrameLines(
+	buffer  : Uint8ClampedArray,
+	context : CanvasRenderingContext2D,
+	lines   : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[],
+) : void
+{
+	function RemoveAllUnrenderedLines(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : boolean
+	{
+		return (line != null);
+	};
+
+	function SortLineToGetLineRestpectDeepness(
 		line1 : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null,
 		line2 : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null,
-	) : number =>
+	) : number
 	{
 		if (line1 && line2)
 		{
 			const averageZDepthLine1 : number = line1.coord.start.z + line1.coord.end.z;
 			const averageZDepthLine2 : number = line2.coord.start.z + line2.coord.end.z;
 
-			if      (averageZDepthLine1 > averageZDepthLine2) return (1);
-			else if (averageZDepthLine1 < averageZDepthLine2) return (-1);
+			if      (averageZDepthLine1 > averageZDepthLine2) return (-1);
+			else if (averageZDepthLine1 < averageZDepthLine2) return (1);
 			else                                              return (0);
 		}
 		else
 			return (0);
-	})
-	.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : void =>
-	{
-		if (line)
-			DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(line.coord), line.color);
-	});
-};
-
-function DrawMeshOnCanvas(
-	buffer  : Uint8ClampedArray,
-	context : CanvasRenderingContext2D,
-	mesh    : Types.T_ModelMesh,
-	camera  : Rasterizer.PolarCamera.Types.T_PolarCamera,
-): void
-{
-	/*function DrawPolygonePointsOnCanvas(
-		polygonePointsCoord : Coord.Types.T_Coord2D[],
-		color               : Color.RGB.Types.T_Color,
-	): void
-	{
-		polygonePointsCoord.map((polygonePointCoord:Coord.Types.T_Coord2D) =>
-		{
-			FillPixelBuffer(
-				buffer,
-				context,
-				Rasterizer.Utils.CenterDisplayOrigin(polygonePointCoord, context.canvas.width, context.canvas.height),
-				color,
-			);
-		});	
-	};*/
-
-	function DrawPolygoneOnCanvas(
-		polygone : Polygone.Types.T_Polygone3D,
-		color    : Color.RGB.Types.T_Color,
-	) : void
-	{
-		const polygoneCoord       : Coord.Types.T_Coord2D[] = Rasterizer.Utils.PolygoneFromCameraSpace_ToDisplaySpace_Polygone(polygone, camera.polarCoord.radius);
-		const polygonePointsCoord : Coord.Types.T_Coord2D[] = Polygone.Utils.GetPolygonePointsCoord(polygoneCoord);
-
-		//DrawPolygonePointsOnCanvas(polygonePointsCoord, color);
 	};
 
-	mesh.map((polygone : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>): void =>
+	function RenderLines(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : void
 	{
-		DrawPolygoneOnCanvas(polygone.coord, polygone.color);	
-	});
+		function DrawLinePointsOnCanvas(
+			linePointsCoord : Coord.Types.T_Coord2D[],
+			color           : Color.RGB.Types.T_Color,
+		): void
+		{
+			linePointsCoord.map((linePointCoord:Coord.Types.T_Coord2D): void => { FillPixelBuffer(buffer, context, linePointCoord, color); });	
+		};
+
+		if (line)
+			DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(line.coord), line.color);
+	};
+
+	lines
+	.filter(RemoveAllUnrenderedLines)
+	.sort  (SortLineToGetLineRestpectDeepness)
+	.map   (RenderLines);
 };
 
-export function ExtractCameraToAnchorVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
-{
-	return ([cameraToWorldMatrix[0][0],cameraToWorldMatrix[0][1],cameraToWorldMatrix[0][2]]);
-};
-
-export function ExtractCameraToSideVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
-{
-	return ([cameraToWorldMatrix[1][0],cameraToWorldMatrix[1][1],cameraToWorldMatrix[1][2]]);
-};
-
-export function ExtractCameraToTopVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
-{
-	return ([cameraToWorldMatrix[2][0],cameraToWorldMatrix[2][1],cameraToWorldMatrix[2][2]]);
-};
-
-export function RedrawFrame(
+export function RenderFrame(
 	canvas                  : HTMLCanvasElement | undefined,
 	camera                  : Types.T_CameraState,
 	coordinateSystemBases  ?: Rasterizer.Types.T_CoordinateBases_3D,
@@ -268,27 +251,26 @@ export function RedrawFrame(
 		
 		if (context)
 		{
-			const imagedata           : ImageData                 = context.createImageData(context.canvas.width, context.canvas.height);
+			const imagedata : ImageData = context.createImageData(context.canvas.width, context.canvas.height);
+
 			const cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
 			const worldToCameraMatrix : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+
+			const coordinateSystemInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, coordinateSystemBases ?? []);
+
+			const meshLines         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Polygone.Utils.FromColoredPolygones_ToColoredLines(mesh ?? []);
+			const meshInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, meshLines);
+
+			const coordinateSystemLinesToRender : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[] = GetLinesToRender(context, coordinateSystemInCameraSpace, camera);
+			const meshLinesToRender             : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[] = GetLinesToRender(context, meshInCameraSpace            , camera);
 			
-			let coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D | undefined = undefined;
-			let meshInCameraSpace             : Types.T_ModelMesh                     | undefined = undefined;
+			if (background)
+				RenderCanvasBackground (imagedata.data, context, background);
 
-			if (coordinateSystemBases) coordinateSystemInCameraSpace = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
-			if (mesh)                  meshInCameraSpace             = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh            (worldToCameraMatrix, mesh);      
-			if (background)            FillCanvasBackground(imagedata.data, context, background);
-
-			if (coordinateSystemInCameraSpace) DrawCoordSystemOnCanvas(imagedata.data, context, coordinateSystemInCameraSpace, camera);
-			if (meshInCameraSpace)             DrawMeshOnCanvas       (imagedata.data, context, meshInCameraSpace            , camera);
+			RenderAllFrameLines(imagedata.data, context, [...coordinateSystemLinesToRender, ...meshLinesToRender]);
 
 			context.putImageData(imagedata, 0, 0);
-
-			camera.cameraToWorldMatrix  = cameraToWorldMatrix;
-			camera.worldToCameraMatrix  = worldToCameraMatrix;
-			camera.cameraToAnchorVector = ExtractCameraToAnchorVector_FromCameraToWorldMatrix(worldToCameraMatrix);
-			camera.cameraToSideVector   = ExtractCameraToSideVector_FromCameraToWorldMatrix  (worldToCameraMatrix);
-			camera.cameraToTopVector    = ExtractCameraToTopVector_FromCameraToWorldMatrix   (worldToCameraMatrix);
+			UpdateCamera(camera, cameraToWorldMatrix, worldToCameraMatrix);
 		}
 	}
 };

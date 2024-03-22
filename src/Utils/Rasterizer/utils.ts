@@ -1,83 +1,14 @@
-import * as Polygone from "../Shapes/Polygone";
-import * as Line     from "../Shapes/Line";
-import * as Coord    from "../Coord";
-import * as Matrix   from "../Matrix";
-import * as Types    from "./types";
+import * as Line   from "../Shapes/Line";
+import * as Coord  from "../Coord";
+import * as Matrix from "../Matrix";
 
 
-export function FromWorldSpace_ToCameraSpace_CoordSystemBases(
-	cameraMatrix          : Matrix.Types.T_Matrix_4_4,
-	coordinateSystemBases : Types.T_CoordinateBases_3D,
-): Types.T_CoordinateBases_3D
-{
-	function FromCoordWorld_ToCoordCamera(coord : Coord.Types.T_Coord3D): Coord.Types.T_Coord3D
-	{
-		const newCoord:Coord.Types.T_Coord4D = Matrix.Utils.Transformation(cameraMatrix, { ...coord, w: 1 });
-
-		return ({ x: newCoord.x, y: newCoord.y, z: newCoord.z });
-	};
-
-	function FromLineWorld_ToLineCamera(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D>
-	{
-		return (
-			{
-				color: line.color,
-				coord:
-				{
-					start: FromCoordWorld_ToCoordCamera(line.coord.start),
-					end  : FromCoordWorld_ToCoordCamera(line.coord.end),
-				}
-			}
-		);
-	};
-
-	return (
-		coordinateSystemBases.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> =>
-		{
-			return (FromLineWorld_ToLineCamera(line));
-		}) as Types.T_CoordinateBases_3D
-	);
-};
-
-export function FromWorldSpace_ToCameraSpace_Mesh(
+function FromCoordWorld_ToCoordCamera(
 	cameraMatrix : Matrix.Types.T_Matrix_4_4,
-	mesh         : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
-) : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]
+	coord        : Coord.Types.T_Coord3D,
+) : Coord.Types.T_Coord3D
 {
-	function FromCoordWorld_ToCoordCamera(coord : Coord.Types.T_Coord3D): Coord.Types.T_Coord3D
-	{
-		const newCoord:Coord.Types.T_Coord4D = Matrix.Utils.Transformation(cameraMatrix, { ...coord, w: 1 });
-
-		return ({ x: newCoord.x, y: newCoord.y, z: newCoord.z });
-	};
-
-	function FromPolygoneWorld_ToPolygoneCamera(polygone : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>): Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>
-	{
-		return (
-			{
-				color: polygone.color,
-				coord: polygone.coord.map((coord : Coord.Types.T_Coord3D): Coord.Types.T_Coord3D =>
-				{
-					return (FromCoordWorld_ToCoordCamera(coord));
-				})
-			}
-		);
-	};
-
-	return (
-		mesh.map((polygone : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>): Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D> =>
-		{
-			return (FromPolygoneWorld_ToPolygoneCamera(polygone));
-		})
-	);
-};
-
-export function PolygoneFromCameraSpace_ToDisplaySpace_Polygone(
-	polygone     : Polygone.Types.T_Polygone3D,
-	cameraRadius : number,
-) : Coord.Types.T_Coord2D[]
-{
-	return (polygone.map((coord : Coord.Types.T_Coord3D) : Coord.Types.T_Coord2D => { return (FromCameraSpace_ToDisplaySpace_Coord(coord, cameraRadius)); }));
+	return ({ ...Matrix.Utils.Transformation(cameraMatrix, { ...coord, w: 1 }) });
 };
 
 export function FromCameraSpace_ToDisplaySpace_Coord(
@@ -95,4 +26,26 @@ export function CenterDisplayOrigin(
 ):Coord.Types.T_Coord3D
 {
 	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
+};
+
+export function FromWorldSpace_ToCameraSpace(
+	cameraMatrix : Matrix.Types.T_Matrix_4_4,
+	mesh         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[],
+): Line.Types.T_ColoredLine<Line.Types.T_Line3D>[]
+{
+	return (
+		mesh.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> =>
+		{
+			return (
+				{
+					color: line.color,
+					coord:
+					{
+						start: FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.start),
+						end  : FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.end),
+					}
+				}
+			);
+		})
+	);
 };

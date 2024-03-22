@@ -7,37 +7,70 @@ import * as Color from "../../Color";
 export function IsPolygone_2(polygone : Types.T_Polygone): polygone is Types.T_Polygone2D { return (polygone.length !== 0 && Coord.Utils.IsCoord_2(polygone[1])); };
 export function IsPolygone_3(polygone : Types.T_Polygone): polygone is Types.T_Polygone3D { return (polygone.length !== 0 && Coord.Utils.IsCoord_3(polygone[1])); };
 
-export function GetPolygonePointsCoord(polygone : Types.T_Polygone2D): Coord.Types.T_Coord2D[]
+export function FromPolygones_ToLines(polygones : Types.T_Polygone3D[]): Line.Types.T_Line3D[]
 {
-	let result : Coord.Types.T_Coord2D[] = [];
+	return (
+		polygones
+		.map(FromPolygone_ToLines)
+		.reduce((prev : Line.Types.T_Line3D[], current : Line.Types.T_Line3D[] ) => 
+		{
+			return ([...prev, ...current]);
+		}, [])
+	);
+};
+
+export function FromPolygone_ToLines(polygone : Types.T_Polygone3D): Line.Types.T_Line3D[]
+{
+	let result : Line.Types.T_Line3D[] = [];
 
 	for (let i : number = 0; i < polygone.length; ++i)
 	{
-		if (i < polygone.length - 1) result = [...result, ...Line.Utils.GetLinePointsCoord({ start: polygone[i], end: polygone[i + 1] })];
-		else                         result = [...result, ...Line.Utils.GetLinePointsCoord({ start: polygone[i], end: polygone[0] })];
+		if (i < polygone.length - 1) result = [...result, { start: polygone[i], end: polygone[i + 1] }];
+		else                         result = [...result, { start: polygone[i], end: polygone[0]     }];
 	}
 
 	return (result);
 };
 
+export function FromColoredPolygones_ToColoredLines(
+	polygones : Types.T_ColoredPolygone<Types.T_Polygone3D>[],
+) : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[]
+{
+	return (
+		polygones.map((polygone : Types.T_ColoredPolygone<Types.T_Polygone3D>) =>
+		{
+			return(
+				FromPolygone_ToLines(polygone.coord)
+				.map((line : Line.Types.T_Line3D) : Line.Types.T_ColoredLine<Line.Types.T_Line3D> =>
+				{
+					return ({ coord: line, color: polygone.color });
+				})
+			);
+		})
+		.reduce((prev : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[], current : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] ) => 
+		{
+			return ([...prev, ...current]);
+		}, [])
+	);
+};
+
 export function FromPolygones_ToColoredPolygones(
-	polygones : Types.T_Polygone3D[],
-	color?    : Color.RGB.Types.T_Color,
+	polygones  : Types.T_Polygone3D[],
+	color     ?: Color.RGB.Types.T_Color,
 ): Types.T_ColoredPolygone<Types.T_Polygone3D>[]
 {
-	return (polygones.map((polygone:Types.T_Polygone3D) => { return (FromPolygone_ToColoredPolygone(polygone, color)); }));
+	return (
+		polygones.map((polygone : Types.T_Polygone3D): Types.T_ColoredPolygone<Types.T_Polygone3D> =>
+		{
+			return (FromPolygone_ToColoredPolygone(polygone, color));
+		})
+	);
 };
-function FromPolygone_ToColoredPolygone(
+
+export function FromPolygone_ToColoredPolygone(
 	polygone : Types.T_Polygone3D,
-	color?   : Color.RGB.Types.T_Color,
+	color?    : Color.RGB.Types.T_Color,
 ): Types.T_ColoredPolygone<Types.T_Polygone3D>
 {
-	const defaultColor : Color.RGB.Types.T_Color = { red: 0, green: 0, blue: 0 };
-
-	return (
-		{
-			color: (color) ? color : defaultColor,
-			coord: polygone,
-		}
-	);
+	return ({ color: color ?? { red: 0, green: 0, blue: 0 }, coord: polygone });
 };

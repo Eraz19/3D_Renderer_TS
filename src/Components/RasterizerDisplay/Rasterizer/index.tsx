@@ -114,7 +114,7 @@ export function Component() : JSX.Element
 					
 
 					if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
-						Utils.RedrawFrame(context.canvasRef, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
+						Utils.RenderFrame(context.canvasRef, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
 				}
 
 				context.renderLoop.renderEnd = new Date();
