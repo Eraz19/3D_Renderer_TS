@@ -25,7 +25,7 @@ function Add_2(
 	vector : Vector.Types.T_Vec2D,
 ) : Types.T_Coord2D
 {
-	return ({ x : coord.x + vector[0], y: coord.y + vector[1] });
+	return ({ x: coord.x + vector[0], y: coord.y + vector[1] });
 };
 function Add_3(
 	coord  : Types.T_Coord3D,
@@ -62,6 +62,50 @@ export function Add(
 	else if (IsCoord_3(coord) && Vector.Utils.IsVector_3(vector)) return (Add_3(coord, vector));
 	else if (IsCoord_4(coord) && Vector.Utils.IsVector_4(vector)) return (Add_4(coord, vector));
 	else                                                          return ({} as never);
+};
+
+function Sub_2(
+	coord1 : Types.T_Coord2D,
+	coord2 : Types.T_Coord2D,
+) : Vector.Types.T_Vec2D
+{
+	return ([(coord1.x - coord2.x),(coord1.y - coord2.y)]);
+};
+function Sub_3(
+	coord1 : Types.T_Coord3D,
+	coord2 : Types.T_Coord3D,
+) : Vector.Types.T_Vec3D
+{
+	return ([(coord1.x - coord2.x),(coord1.y - coord2.y),(coord1.z - coord2.z)]);
+};
+function Sub_4(
+	coord1 : Types.T_Coord4D,
+	coord2 : Types.T_Coord4D,
+) : Vector.Types.T_Vec4D
+{
+	return ([(coord1.x - coord2.x),(coord1.y - coord2.y),(coord1.z - coord2.z),(coord1.w - coord2.w)]);
+};
+export function Sub(
+	coord1 : Types.T_Coord2D,
+	coord2 : Types.T_Coord2D,
+) : Vector.Types.T_Vec2D
+export function Sub(
+	coord1 : Types.T_Coord3D,
+	coord2 : Types.T_Coord3D,
+) : Vector.Types.T_Vec3D
+export function Sub(
+	coord1 : Types.T_Coord4D,
+	coord2 : Types.T_Coord4D,
+) : Vector.Types.T_Vec4D
+export function Sub(
+	coord1 : Types.T_Coord,
+	coord2 : Types.T_Coord,
+) : Vector.Types.T_Vec
+{
+	if      (IsCoord_2(coord1) && IsCoord_2(coord2)) return (Sub_2(coord1, coord2));
+	else if (IsCoord_3(coord1) && IsCoord_3(coord2)) return (Sub_3(coord1, coord2));
+	else if (IsCoord_4(coord1) && IsCoord_4(coord2)) return (Sub_4(coord1, coord2));
+	else                                             return ({} as never);
 };
 
 function DeepCopy_2(coord : Types.T_Coord2D) : Types.T_Coord2D

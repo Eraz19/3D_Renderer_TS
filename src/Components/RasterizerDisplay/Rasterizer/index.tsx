@@ -47,7 +47,7 @@ export function Component() : JSX.Element
 			return (new Promise((resolve) => { sleepTimeout.current = setTimeout(resolve, millisecond); }));
 		};
 
-		function IsCameraIsSame(
+		function IsCameraSame(
 			prevCamera ?: PolarCamera.Types.T_PolarCamera,
 			newCamera  ?: PolarCamera.Types.T_PolarCamera,
 		) : boolean
@@ -63,13 +63,21 @@ export function Component() : JSX.Element
 				return (false);
 		};
 	
-		function IsCanvasSizeIsSame(
+		function IsCanvasSizeSame(
 			prevCanvasSize ?: Types.T_CanvasSize,
 			newCanvasSier  ?: Types.T_CanvasSize,
 		) : boolean
 		{
 			if (prevCanvasSize && newCanvasSier) return (prevCanvasSize.width === newCanvasSier.width && prevCanvasSize.height === newCanvasSier.height);
 			else                                 return (false);
+		};
+
+		function IsMeshSame(
+			prevMesh ?: Types.T_ModelMesh,
+			newMesh  ?: Types.T_ModelMesh,
+		) : boolean
+		{
+			return (prevMesh === newMesh);
 		};
 
 		function ResizeCanvas(newSize : Types.T_CanvasSize) : void
@@ -90,22 +98,22 @@ export function Component() : JSX.Element
 			{
 				context.renderLoop.renderStart = new Date();
 
-				if
-				(
-					context.camera     &&
-					context.canvasRef  &&
-					context.canvasSize && 
-					(
-						!IsCameraIsSame    (context.renderLoop?.cameraSnapShot    , { ...context.camera     }) ||
-						!IsCanvasSizeIsSame(context.renderLoop?.canvasSizeSnapShot, { ...context.canvasSize })
-					)
-				)
+				if (context.camera && context.canvasRef && context.canvasSize)
 				{
-					context.renderLoop.cameraSnapShot     =	PolarCamera.Utils.DeepCopy(context.camera);
-					context.renderLoop.canvasSizeSnapShot = { ...context.canvasSize };
-					ResizeCanvas(context.canvasSize);
+					const isRerenderingBecauseOfCameraUpdate     : boolean = !IsCameraSame    (context.renderLoop?.cameraSnapShot    , { ...context.camera     });
+					const isRerenderingBecauseOfCanvasSizeUpdate : boolean = !IsCanvasSizeSame(context.renderLoop?.canvasSizeSnapShot, { ...context.canvasSize });
+					const isRerenderingBecauseOfMeshUpdate       : boolean = !IsMeshSame      (context.renderLoop?.meshSnapShot      , context.modelMesh        );
+
+					if (isRerenderingBecauseOfCameraUpdate) context.renderLoop.cameraSnapShot =	PolarCamera.Utils.DeepCopy(context.camera);
+					if (isRerenderingBecauseOfMeshUpdate  ) context.renderLoop.meshSnapShot   =	context.modelMesh;
+					if (isRerenderingBecauseOfCanvasSizeUpdate)
+					{
+						context.renderLoop.canvasSizeSnapShot = { ...context.canvasSize };
+						ResizeCanvas(context.canvasSize);
+					}
 					
-					if (context.camera)
+
+					if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
 						Utils.RedrawFrame(context.canvasRef, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
 				}
 

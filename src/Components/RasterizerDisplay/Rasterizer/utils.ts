@@ -9,6 +9,101 @@ import * as Vector     from "../../../Utils/Vector";
 import * as Types from "./types";
 
 
+function RemoveLinePartOutsideOfCanvas(
+	line       : Line.Types.T_Line2D,
+	canvasSize : Types.T_CanvasSize,
+) : Line.Types.T_Line2D | null
+{
+	function IsPointOutOfCanvas(pointCoord : Coord.Types.T_Coord2D) : Types.E_CanvasAreas
+	{
+		function IsPointOutOfCanvas_Top     (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.y < 0                ); };
+		function IsPointOutOfCanvas_Bottom  (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.y > canvasSize.height); };
+		function IsPointOutOfCnavas_Left    (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.x < 0                ); };
+		function IsPointOutOfCnavas_Right   (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.x > canvasSize.width ); };
+
+		if (IsPointOutOfCnavas_Left(pointCoord))
+		{
+			if      (IsPointOutOfCanvas_Top   (pointCoord)) return (Types.E_CanvasAreas.OUT_LEFT_TOP);
+			else if (IsPointOutOfCanvas_Bottom(pointCoord)) return (Types.E_CanvasAreas.OUT_LEFT_BOTTOM);
+			else                                            return (Types.E_CanvasAreas.OUT_LEFT);
+		}
+		else if (IsPointOutOfCnavas_Right(pointCoord))
+		{
+			if      (IsPointOutOfCanvas_Top   (pointCoord)) return (Types.E_CanvasAreas.OUT_RIGHT_TOP);
+			else if (IsPointOutOfCanvas_Bottom(pointCoord)) return (Types.E_CanvasAreas.OUT_RIGHT_BOTTOM);
+			else                                            return (Types.E_CanvasAreas.OUT_RIGHT);
+		}
+		else if (IsPointOutOfCanvas_Top   (pointCoord)) return(Types.E_CanvasAreas.OUT_TOP);
+		else if (IsPointOutOfCanvas_Bottom(pointCoord)) return(Types.E_CanvasAreas.OUT_BOTTOM);
+		else                                            return(Types.E_CanvasAreas.IN);
+	};
+
+	function GetNewLineInCanvas_Vertical(
+		pointInCanvas  : Coord.Types.T_Coord2D,
+		pointOutCanvas : Coord.Types.T_Coord2D,
+		limit          : number,
+	) : Coord.Types.T_Coord2D
+	{
+		const vectorFactor : number = (limit - pointInCanvas.y) / (pointOutCanvas.y - pointInCanvas.y);
+
+		return ({ x: pointInCanvas.x + (pointOutCanvas.x - pointInCanvas.x) * vectorFactor, y: limit });
+	};
+
+	function GetNewLineInCanvas_Horizontal(
+		pointInCanvas  : Coord.Types.T_Coord2D,
+		pointOutCanvas : Coord.Types.T_Coord2D,
+		limit          : number,
+	) : Coord.Types.T_Coord2D
+	{
+		const vectorFactor : number = (limit - pointInCanvas.x) / (pointOutCanvas.x - pointInCanvas.x);
+
+		return ({ x: limit, y: pointInCanvas.y + (pointOutCanvas.y - pointInCanvas.y) * vectorFactor });
+	};
+
+	function GetNewLineInCanvas_Diagonal(
+		pointInCanvas   : Coord.Types.T_Coord2D,
+		pointOutCanvas  : Coord.Types.T_Coord2D,
+		limitHorizontal : number,
+		limitVertical   : number,
+	) : Coord.Types.T_Coord2D
+	{
+		const vectorFactor_Horizontal : number = (limitHorizontal - pointInCanvas.x) / (pointOutCanvas.x - pointInCanvas.x);
+		const vectorFactor_Vertical   : number = (limitVertical   - pointInCanvas.y) / (pointOutCanvas.y - pointInCanvas.y);
+
+		if      (vectorFactor_Horizontal < vectorFactor_Vertical) return ({ x: limitHorizontal, y: pointInCanvas.y + (pointOutCanvas.y - pointInCanvas.y) * vectorFactor_Horizontal } );
+		else if (vectorFactor_Horizontal > vectorFactor_Vertical) return ({ x: pointInCanvas.x + (pointOutCanvas.x - pointInCanvas.x) * vectorFactor_Vertical, y: limitVertical })
+		else                                                      return ({ x: limitHorizontal, y: limitVertical });
+	};
+
+	console.log(canvasSize);
+
+	const lineStartLocationRelativeToCanvas : Types.E_CanvasAreas = IsPointOutOfCanvas(line.start);
+	const lineEndLocationRelativeToCanvas   : Types.E_CanvasAreas = IsPointOutOfCanvas(line.end);
+
+	if      (lineStartLocationRelativeToCanvas !== Types.E_CanvasAreas.IN && lineEndLocationRelativeToCanvas !== Types.E_CanvasAreas.IN) return (null);
+	else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.IN && lineEndLocationRelativeToCanvas === Types.E_CanvasAreas.IN) return (line);
+	else 
+	{
+		if      (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT        ) return({ start: GetNewLineInCanvas_Horizontal(line.end, line.start, 0)                                  , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_LEFT        ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Horizontal(line.start, line.end, 0)                                   });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_TOP         ) return({ start: GetNewLineInCanvas_Vertical  (line.end, line.start, 0)                                  , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_TOP         ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Vertical  (line.start, line.end, 0)                                   });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT       ) return({ start: GetNewLineInCanvas_Horizontal(line.end, line.start, canvasSize.width)                   , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_RIGHT       ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Horizontal(line.end, line.start, canvasSize.width)                    });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_BOTTOM      ) return({ start: GetNewLineInCanvas_Vertical  (line.end, line.start, canvasSize.height)                  , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_BOTTOM      ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Vertical  (line.end, line.start, canvasSize.height)                   });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_TOP    ) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, 0, 0)                               , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_LEFT_TOP    ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, 0, 0)                                });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_TOP   ) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, canvasSize.width, 0)                , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_RIGHT_TOP   ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, canvasSize.width, 0)                 });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_BOTTOM) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, canvasSize.width, canvasSize.height), end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_RIGHT_BOTTOM) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, canvasSize.width, canvasSize.height) });
+		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_BOTTOM ) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, 0, canvasSize.height)               , end: line.end                                                                                 });
+		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_LEFT_BOTTOM ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, 0, canvasSize.height)                });
+		else                                                                                 return(null);
+	}
+};
+
 function FillPixelBuffer(
 	buffer  : Uint8ClampedArray,
 	context : CanvasRenderingContext2D,
@@ -67,25 +162,29 @@ function DrawCoordSystemOnCanvas(
 	function DrawLineOnCanvas(
 		line    : Line.Types.T_Line3D,
 		color   : Color.RGB.Types.T_Color,
+		context : CanvasRenderingContext2D,
 	): void
 	{
-		const lineStartCoord  : Coord.Types.T_Coord2D   = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.start, camera.polarCoord.radius);
-		const lineEndCoord 	  : Coord.Types.T_Coord2D   = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.end  , camera.polarCoord.radius);
-		const linePointsCoord : Coord.Types.T_Coord2D[] = Line.Utils.GetLinePointsCoord({ start: lineStartCoord, end: lineEndCoord });
+		const canvasSize : Types.T_CanvasSize = { width: context.canvas.clientWidth, height: context.canvas.clientHeight };
 
-		DrawLinePointsOnCanvas(linePointsCoord, color);
+		const lineStartCoord : Coord.Types.T_Coord2D      = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.start, camera.polarCoord.radius);
+		const lineEndCoord 	 : Coord.Types.T_Coord2D      = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.end  , camera.polarCoord.radius);
+		const lineInCanvas   : Line.Types.T_Line2D | null = RemoveLinePartOutsideOfCanvas({ start: lineStartCoord, end: lineEndCoord }, canvasSize);
+
+		if (lineInCanvas)
+			DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(lineInCanvas), color);
 	};
 
 	coordinateSystemBases.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): void =>
 	{
-		DrawLineOnCanvas(line.coord, line.color);	
+		DrawLineOnCanvas(line.coord, line.color, context);	
 	});
 };
 
 function DrawMeshOnCanvas(
 	buffer  : Uint8ClampedArray,
 	context : CanvasRenderingContext2D,
-	mesh    : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
+	mesh    : Types.T_ModelMesh,
 	camera  : Rasterizer.PolarCamera.Types.T_PolarCamera,
 ): void
 {
@@ -141,7 +240,7 @@ export function RedrawFrame(
 	canvas                  : HTMLCanvasElement | undefined,
 	camera                  : Types.T_CameraState,
 	coordinateSystemBases  ?: Rasterizer.Types.T_CoordinateBases_3D,
-	mesh                   ?: Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[],
+	mesh                   ?: Types.T_ModelMesh,
 	background             ?: Color.RGB.Types.T_Color,
 ) : void
 {
@@ -155,8 +254,8 @@ export function RedrawFrame(
 			const cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
 			const worldToCameraMatrix : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
 			
-			let coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D | undefined                           = undefined;
-			let meshInCameraSpace             : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[] | undefined = undefined;
+			let coordinateSystemInCameraSpace : Rasterizer.Types.T_CoordinateBases_3D | undefined = undefined;
+			let meshInCameraSpace             : Types.T_ModelMesh                     | undefined = undefined;
 
 			if (coordinateSystemBases) coordinateSystemInCameraSpace = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_CoordSystemBases(worldToCameraMatrix, coordinateSystemBases);
 			if (mesh)                  meshInCameraSpace             = Rasterizer.Utils.FromWorldSpace_ToCameraSpace_Mesh            (worldToCameraMatrix, mesh);      
