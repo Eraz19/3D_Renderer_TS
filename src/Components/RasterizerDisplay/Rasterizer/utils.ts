@@ -10,9 +10,9 @@ import * as Types from "./types";
 
 
 function RemoveLinePartOutsideOfCanvas(
-	line       : Line.Types.T_Line2D,
+	line       : Line.Types.T_Line3D,
 	canvasSize : Types.T_CanvasSize,
-) : Line.Types.T_Line2D | null
+) : Line.Types.T_Line3D | null
 {
 	function IsPointOutOfCanvas(pointCoord : Coord.Types.T_Coord2D) : Types.E_CanvasAreas
 	{
@@ -39,43 +39,41 @@ function RemoveLinePartOutsideOfCanvas(
 	};
 
 	function GetNewLineInCanvas_Vertical(
-		pointInCanvas  : Coord.Types.T_Coord2D,
-		pointOutCanvas : Coord.Types.T_Coord2D,
+		pointInCanvas  : Coord.Types.T_Coord3D,
+		pointOutCanvas : Coord.Types.T_Coord3D,
 		limit          : number,
-	) : Coord.Types.T_Coord2D
+	) : Coord.Types.T_Coord3D
 	{
 		const vectorFactor : number = (limit - pointInCanvas.y) / (pointOutCanvas.y - pointInCanvas.y);
 
-		return ({ x: pointInCanvas.x + (pointOutCanvas.x - pointInCanvas.x) * vectorFactor, y: limit });
+		return ({ x: Math.floor(pointInCanvas.x + ((pointOutCanvas.x - pointInCanvas.x) * vectorFactor)), y: limit, z: pointOutCanvas.z });
 	};
 
 	function GetNewLineInCanvas_Horizontal(
-		pointInCanvas  : Coord.Types.T_Coord2D,
-		pointOutCanvas : Coord.Types.T_Coord2D,
+		pointInCanvas  : Coord.Types.T_Coord3D,
+		pointOutCanvas : Coord.Types.T_Coord3D,
 		limit          : number,
-	) : Coord.Types.T_Coord2D
+	) : Coord.Types.T_Coord3D
 	{
 		const vectorFactor : number = (limit - pointInCanvas.x) / (pointOutCanvas.x - pointInCanvas.x);
 
-		return ({ x: limit, y: pointInCanvas.y + (pointOutCanvas.y - pointInCanvas.y) * vectorFactor });
+		return ({ x: limit, y: Math.floor(pointInCanvas.y + ((pointOutCanvas.y - pointInCanvas.y) * vectorFactor)), z: pointOutCanvas.z });
 	};
 
 	function GetNewLineInCanvas_Diagonal(
-		pointInCanvas   : Coord.Types.T_Coord2D,
-		pointOutCanvas  : Coord.Types.T_Coord2D,
+		pointInCanvas   : Coord.Types.T_Coord3D,
+		pointOutCanvas  : Coord.Types.T_Coord3D,
 		limitHorizontal : number,
 		limitVertical   : number,
-	) : Coord.Types.T_Coord2D
+	) : Coord.Types.T_Coord3D
 	{
 		const vectorFactor_Horizontal : number = (limitHorizontal - pointInCanvas.x) / (pointOutCanvas.x - pointInCanvas.x);
 		const vectorFactor_Vertical   : number = (limitVertical   - pointInCanvas.y) / (pointOutCanvas.y - pointInCanvas.y);
 
-		if      (vectorFactor_Horizontal < vectorFactor_Vertical) return ({ x: limitHorizontal, y: pointInCanvas.y + (pointOutCanvas.y - pointInCanvas.y) * vectorFactor_Horizontal } );
-		else if (vectorFactor_Horizontal > vectorFactor_Vertical) return ({ x: pointInCanvas.x + (pointOutCanvas.x - pointInCanvas.x) * vectorFactor_Vertical, y: limitVertical })
-		else                                                      return ({ x: limitHorizontal, y: limitVertical });
+		if      (vectorFactor_Horizontal < vectorFactor_Vertical) return ({ x: limitHorizontal, y: Math.floor(pointInCanvas.y + ((pointOutCanvas.y - pointInCanvas.y) * vectorFactor_Horizontal)), z: pointOutCanvas.z });
+		else if (vectorFactor_Horizontal > vectorFactor_Vertical) return ({ x: Math.floor(pointInCanvas.x + ((pointOutCanvas.x - pointInCanvas.x) * vectorFactor_Vertical)), y: limitVertical    , z: pointOutCanvas.z });
+		else                                                      return ({ x: limitHorizontal, y: limitVertical, z: pointOutCanvas.z });
 	};
-
-	console.log(canvasSize);
 
 	const lineStartLocationRelativeToCanvas : Types.E_CanvasAreas = IsPointOutOfCanvas(line.start);
 	const lineEndLocationRelativeToCanvas   : Types.E_CanvasAreas = IsPointOutOfCanvas(line.end);
@@ -153,31 +151,51 @@ function DrawCoordSystemOnCanvas(
 			FillPixelBuffer(
 				buffer,
 				context,
-				Rasterizer.Utils.CenterDisplayOrigin(linePointCoord, context.canvas.width, context.canvas.height),
+				linePointCoord,
 				color,
 			);
 		});	
 	};
 
-	function DrawLineOnCanvas(
-		line    : Line.Types.T_Line3D,
-		color   : Color.RGB.Types.T_Color,
+	function LineFromCameraSpace_ToDisplaySpace(
+		line    : Line.Types.T_ColoredLine<Line.Types.T_Line3D>,
 		context : CanvasRenderingContext2D,
-	): void
+	): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
 	{
 		const canvasSize : Types.T_CanvasSize = { width: context.canvas.clientWidth, height: context.canvas.clientHeight };
 
-		const lineStartCoord : Coord.Types.T_Coord2D      = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.start, camera.polarCoord.radius);
-		const lineEndCoord 	 : Coord.Types.T_Coord2D      = Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.end  , camera.polarCoord.radius);
-		const lineInCanvas   : Line.Types.T_Line2D | null = RemoveLinePartOutsideOfCanvas({ start: lineStartCoord, end: lineEndCoord }, canvasSize);
-
-		if (lineInCanvas)
-			DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(lineInCanvas), color);
+		const lineStartCoord : Coord.Types.T_Coord3D      = Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height);
+		const lineEndCoord 	 : Coord.Types.T_Coord3D      = Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height);
+		const lineInDisplay  : Line.Types.T_Line3D | null = RemoveLinePartOutsideOfCanvas({ start: lineStartCoord, end: lineEndCoord }, canvasSize);
+		
+		if (lineInDisplay) return ({ color: line.color, coord: lineInDisplay });
+		else               return (null);
 	};
 
-	coordinateSystemBases.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): void =>
+	coordinateSystemBases
+	.map   ((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null => { return (LineFromCameraSpace_ToDisplaySpace(line, context)); })
+	.filter((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : boolean => { return (line != null); })
+	.sort  ((
+		line1 : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null,
+		line2 : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null,
+	) : number =>
 	{
-		DrawLineOnCanvas(line.coord, line.color, context);	
+		if (line1 && line2)
+		{
+			const averageZDepthLine1 : number = line1.coord.start.z + line1.coord.end.z;
+			const averageZDepthLine2 : number = line2.coord.start.z + line2.coord.end.z;
+
+			if      (averageZDepthLine1 > averageZDepthLine2) return (1);
+			else if (averageZDepthLine1 < averageZDepthLine2) return (-1);
+			else                                              return (0);
+		}
+		else
+			return (0);
+	})
+	.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : void =>
+	{
+		if (line)
+			DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(line.coord), line.color);
 	});
 };
 
@@ -188,7 +206,7 @@ function DrawMeshOnCanvas(
 	camera  : Rasterizer.PolarCamera.Types.T_PolarCamera,
 ): void
 {
-	function DrawPolygonePointsOnCanvas(
+	/*function DrawPolygonePointsOnCanvas(
 		polygonePointsCoord : Coord.Types.T_Coord2D[],
 		color               : Color.RGB.Types.T_Color,
 	): void
@@ -202,7 +220,7 @@ function DrawMeshOnCanvas(
 				color,
 			);
 		});	
-	};
+	};*/
 
 	function DrawPolygoneOnCanvas(
 		polygone : Polygone.Types.T_Polygone3D,
@@ -212,7 +230,7 @@ function DrawMeshOnCanvas(
 		const polygoneCoord       : Coord.Types.T_Coord2D[] = Rasterizer.Utils.PolygoneFromCameraSpace_ToDisplaySpace_Polygone(polygone, camera.polarCoord.radius);
 		const polygonePointsCoord : Coord.Types.T_Coord2D[] = Polygone.Utils.GetPolygonePointsCoord(polygoneCoord);
 
-		DrawPolygonePointsOnCanvas(polygonePointsCoord, color);
+		//DrawPolygonePointsOnCanvas(polygonePointsCoord, color);
 	};
 
 	mesh.map((polygone : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>): void =>

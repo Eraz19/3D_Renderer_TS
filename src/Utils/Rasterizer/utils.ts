@@ -83,16 +83,16 @@ export function PolygoneFromCameraSpace_ToDisplaySpace_Polygone(
 export function FromCameraSpace_ToDisplaySpace_Coord(
 	coord        : Coord.Types.T_Coord3D,
 	cameraRadius : number,
-): Coord.Types.T_Coord2D
+): Coord.Types.T_Coord3D
 {
-	return (Matrix.Utils.Transformation([[0,cameraRadius,0],[0,0,cameraRadius]], coord));
+	return (Matrix.Utils.Transformation([[0,cameraRadius,0],[0,0,cameraRadius],[cameraRadius,0,0]], coord));
 };
 
 export function CenterDisplayOrigin(
-	coord         : Coord.Types.T_Coord2D,
+	coord         : Coord.Types.T_Coord3D,
 	displayWidth  : number,
 	displayHeight : number,
-):Coord.Types.T_Coord2D
+):Coord.Types.T_Coord3D
 {
-	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5) });
+	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
 };

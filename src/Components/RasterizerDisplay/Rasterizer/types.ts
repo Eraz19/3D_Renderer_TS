@@ -9,15 +9,15 @@ import * as Color      from "../../../Utils/Color";
 
 export enum E_CanvasAreas
 {
-	IN,
-	OUT_LEFT,
-	OUT_TOP,
-	OUT_RIGHT,
-	OUT_BOTTOM,
-	OUT_LEFT_TOP,
-	OUT_RIGHT_TOP,
-	OUT_RIGHT_BOTTOM,
-	OUT_LEFT_BOTTOM,
+	IN               = "IN",
+	OUT_LEFT         = "OUT_LEFT",
+	OUT_TOP          = "OUT_TOP",
+	OUT_RIGHT        = "OUT_RIGHT",
+	OUT_BOTTOM       = "OUT_BOTTOM",
+	OUT_LEFT_TOP     = "OUT_LEFT_TOP",
+	OUT_RIGHT_TOP    = "OUT_RIGHT_TOP",
+	OUT_RIGHT_BOTTOM = "OUT_RIGHT_BOTTOM",
+	OUT_LEFT_BOTTOM  = "OUT_LEFT_BOTTOM",
 };
 
 export type T_Second = number;

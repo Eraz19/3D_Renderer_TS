@@ -11,7 +11,7 @@ import * as Types        from "./types";
 import      Style        from "./style.module.scss";
 
 
-const DEFAULT_DRAG_FACTOR   : number = 0.6;
+const DEFAULT_DRAG_FACTOR   : number = 0.7;
 const DEFAULT_ROTATE_FACTOR : number = 0.3;
 const DEFAULT_ZOOM_FACTOR   : number = 0.1;
 
@@ -314,7 +314,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 		{
 			OnDragStart();
 
-			const dragFactor : number = props.dragSettings?.dragFactor ?? DEFAULT_DRAG_FACTOR;
+			const dragFactor : number = (props.dragSettings?.dragFactor ?? DEFAULT_DRAG_FACTOR) * (1 / (context.current.camera?.polarCoord.radius ?? 1));
 			const deltaX     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor *  mouseMoveX : dragFactor * -mouseMoveX;
 			const deltaY     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor * -mouseMoveY : dragFactor *  mouseMoveY;
 
