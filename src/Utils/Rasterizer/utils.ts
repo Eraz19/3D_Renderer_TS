@@ -1,51 +1,78 @@
-import * as Line   from "../Shapes/Line";
-import * as Coord  from "../Coord";
 import * as Matrix from "../Matrix";
+import * as Vector from "../Vector";
 
 
-function FromCoordWorld_ToCoordCamera(
-	cameraMatrix : Matrix.Types.T_Matrix_4_4,
-	coord        : Coord.Types.T_Coord3D,
-) : Coord.Types.T_Coord3D
+function Transformation_3_3(
+	vector : Vector.Types.T_Vec3D,
+	matrix : Matrix.Types.T_Matrix_3_3,
+): void
 {
-	return ({ ...Matrix.Utils.Transformation(cameraMatrix, { ...coord, w: 1 }) });
+	const newVectorX : number = (matrix[1][0] * vector[0]) + (matrix[1][1] * vector[1]) + (matrix[1][2] * vector[2]);
+	const newVectorY : number = (matrix[0][0] * vector[0]) + (matrix[0][1] * vector[1]) + (matrix[0][2] * vector[2]);
+	const newVectorZ : number = (matrix[2][0] * vector[0]) + (matrix[2][1] * vector[1]) + (matrix[2][2] * vector[2]);
+
+	vector[0] = newVectorX;
+	vector[1] = newVectorY;
+	vector[2] = newVectorZ;
 };
 
-export function FromCameraSpace_ToDisplaySpace_Coord(
-	coord        : Coord.Types.T_Coord3D,
-	cameraRadius : number,
-): Coord.Types.T_Coord3D
+function Add_3(
+	vector1 : Vector.Types.T_Vec3D,
+	vector2 : Vector.Types.T_Vec3D,
+): void
 {
-	return (Matrix.Utils.Transformation([[0,cameraRadius,0],[0,0,cameraRadius],[cameraRadius,0,0]], coord));
+	vector1[0] = vector1[0] + vector2[0];
+	vector1[1] = vector1[1] + vector2[1];
+	vector1[2] = vector1[2] + vector2[2];
 };
 
 export function CenterDisplayOrigin(
-	coord         : Coord.Types.T_Coord3D,
+	vertex        : Vector.Types.T_Vec3D,
 	displayWidth  : number,
 	displayHeight : number,
-):Coord.Types.T_Coord3D
+) : void
 {
-	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
+	vertex[0] = Math.floor(vertex[0]  + displayWidth  * .5);
+	vertex[1] = Math.floor(-vertex[1] + displayHeight * .5);
 };
 
-export function FromWorldSpace_ToCameraSpace(
-	cameraMatrix : Matrix.Types.T_Matrix_4_4,
-	mesh         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[],
-): Line.Types.T_ColoredLine<Line.Types.T_Line3D>[]
+export function FromCameraSpace_ToDisplaySpace(
+	vertex       : Vector.Types.T_Vec3D,
+	cameraRadius : number,
+) : void
+{
+	Transformation_3_3(vertex, [[0,cameraRadius,0],[0,0,cameraRadius],[cameraRadius,0,0]]);
+};
+
+function FromWorldSpace_ToCameraSpace(
+	vertex                   : Vector.Types.T_Vec3D,
+	scalingAndRotationMatrix : Matrix.Types.T_Matrix_3_3,
+	translationVector        : Vector.Types.T_Vec3D,
+) : void
+{
+	Transformation_3_3(vertex, scalingAndRotationMatrix);
+	Add_3             (vertex, translationVector       );
+};
+
+export function FromWorldSpace_ToDisplaySpace(
+	vertices                 : Vector.Types.T_Vec3D[],
+	scalingAndRotationMatrix : Matrix.Types.T_Matrix_3_3,
+	translationVector        : Vector.Types.T_Vec3D,
+	cameraRadius             : number,
+	displayWidth             : number,
+	displayHeight            : number,
+): Vector.Types.T_Vec3D[]
 {
 	return (
-		mesh.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> =>
+		vertices.map((vertex : Vector.Types.T_Vec3D): Vector.Types.T_Vec3D =>
 		{
-			return (
-				{
-					color: line.color,
-					coord:
-					{
-						start: FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.start),
-						end  : FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.end),
-					}
-				}
-			);
+			let result : Vector.Types.T_Vec3D = [...vertex];
+
+			FromWorldSpace_ToCameraSpace  (result, scalingAndRotationMatrix, translationVector);
+			FromCameraSpace_ToDisplaySpace(result, cameraRadius                               );
+			CenterDisplayOrigin           (result, displayWidth            , displayHeight    );
+
+			return (result);
 		})
 	);
 };

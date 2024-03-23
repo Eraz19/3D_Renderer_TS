@@ -3,18 +3,14 @@ import * as Vector from "../Vector";
 import * as Coord  from "../Coord";
 
 
-//export function GenerateProjectionMatrixXY():Types.T_Matrix_2_3 { return ([[1,0,0],[0,1,0]]); };
-//export function GenerateProjectionMatrixXZ():Types.T_Matrix_2_3 { return ([[1,0,0],[0,0,1]]); };
-//export function GenerateProjectionMatrixYZ():Types.T_Matrix_2_3 { return ([[0,1,0],[0,0,1]]); };
-
 export function IsMatrix_2_2(matrix : Types.T_Matrix):matrix is Types.T_Matrix_2_2 { return (matrix.length === 2 && matrix[0].length === 2 && matrix[1].length === 2); };
 export function IsMatrix_2_3(matrix : Types.T_Matrix):matrix is Types.T_Matrix_2_3 { return (matrix.length === 2 && matrix[0].length === 3 && matrix[1].length === 3); };
 export function IsMatrix_3_3(matrix : Types.T_Matrix):matrix is Types.T_Matrix_3_3 { return (matrix.length === 3); };
 export function IsMatrix_4_4(matrix : Types.T_Matrix):matrix is Types.T_Matrix_4_4 { return (matrix.length === 4); };
 
 function Transformation_2_2__Coord2(
-	matrix : Types.T_Matrix_2_2,
 	coord  : Coord.Types.T_Coord2D,
+	matrix : Types.T_Matrix_2_2,
 ): Coord.Types.T_Coord2D
 {
 	return (
@@ -25,8 +21,8 @@ function Transformation_2_2__Coord2(
 	);
 };
 function Transformation_2_2__Vec2(
-	matrix : Types.T_Matrix_2_2,
 	vector : Vector.Types.T_Vec2D,
+	matrix : Types.T_Matrix_2_2,
 ): Vector.Types.T_Vec2D
 {
 	return (
@@ -37,8 +33,8 @@ function Transformation_2_2__Vec2(
 	);
 };
 function Transformation_2_3__Coord3(
-	matrix : Types.T_Matrix_2_3,
 	coord  : Coord.Types.T_Coord3D,
+	matrix : Types.T_Matrix_2_3,
 ): Coord.Types.T_Coord2D
 {	
 	return (
@@ -49,8 +45,8 @@ function Transformation_2_3__Coord3(
 	);
 };
 function Transformation_2_3__Vec3(
-	matrix : Types.T_Matrix_2_3,
 	vector : Vector.Types.T_Vec3D,
+	matrix : Types.T_Matrix_2_3,
 ): Vector.Types.T_Vec2D
 {	
 	return (
@@ -61,8 +57,8 @@ function Transformation_2_3__Vec3(
 	);
 };
 function Transformation_3_3__Coord3(
-	matrix : Types.T_Matrix_3_3,
 	coord  : Coord.Types.T_Coord3D,
+	matrix : Types.T_Matrix_3_3,
 ): Coord.Types.T_Coord3D
 {
 	return (
@@ -74,8 +70,8 @@ function Transformation_3_3__Coord3(
 	);
 };
 function Transformation_3_3__Vec3(
-	matrix : Types.T_Matrix_3_3,
 	vector : Vector.Types.T_Vec3D,
+	matrix : Types.T_Matrix_3_3,
 ): Vector.Types.T_Vec3D
 {
 	return (
@@ -88,8 +84,8 @@ function Transformation_3_3__Vec3(
 };
 // This matrix transformation is specificly the the application of the homogenius matrix
 function Transformation_4_4__Coord4(
-	matrix : Types.T_Matrix_4_4,
 	coord  : Coord.Types.T_Coord4D,
+	matrix : Types.T_Matrix_4_4,
 ): Coord.Types.T_Coord4D
 {
 	return (
@@ -102,8 +98,8 @@ function Transformation_4_4__Coord4(
 	);
 };
 function Transformation_4_4__Vec4(
-	matrix : Types.T_Matrix_4_4,
 	vector : Vector.Types.T_Vec4D,
+	matrix : Types.T_Matrix_4_4,
 ): Vector.Types.T_Vec4D
 {
 	return (
@@ -116,113 +112,117 @@ function Transformation_4_4__Vec4(
 	);
 };
 export function Transformation(
-	matrix : Types.T_Matrix_2_2,
 	vector : Vector.Types.T_Vec2D,
-): Vector.Types.T_Vec2D
-export function Transformation(
 	matrix : Types.T_Matrix_2_2,
-	coord  : Coord.Types.T_Coord2D,
-): Coord.Types.T_Coord2D
-export function Transformation(
-	matrix : Types.T_Matrix_2_3,
-	vector : Vector.Types.T_Vec3D,
 ): Vector.Types.T_Vec2D
 export function Transformation(
-	matrix : Types.T_Matrix_2_3,
-	coord  : Coord.Types.T_Coord3D,
+	coord  : Coord.Types.T_Coord2D,
+	matrix : Types.T_Matrix_2_2,
 ): Coord.Types.T_Coord2D
 export function Transformation(
-	matrix : Types.T_Matrix_3_3,
 	vector : Vector.Types.T_Vec3D,
+	matrix : Types.T_Matrix_2_3,
+): Vector.Types.T_Vec2D
+export function Transformation(
+	coord  : Coord.Types.T_Coord3D,
+	matrix : Types.T_Matrix_2_3,
+): Coord.Types.T_Coord2D
+export function Transformation(
+	vector : Vector.Types.T_Vec3D,
+	matrix : Types.T_Matrix_3_3,
 ): Vector.Types.T_Vec3D
 export function Transformation(
-	matrix : Types.T_Matrix_3_3,
 	coord  : Coord.Types.T_Coord3D,
+	matrix : Types.T_Matrix_3_3,
 ): Coord.Types.T_Coord3D
 export function Transformation(
-	matrix : Types.T_Matrix_4_4,
 	vector : Vector.Types.T_Vec4D,
+	matrix : Types.T_Matrix_4_4,
 ): Vector.Types.T_Vec4D
 export function Transformation(
-	matrix : Types.T_Matrix_4_4,
 	coord  : Coord.Types.T_Coord4D,
+	matrix : Types.T_Matrix_4_4,
 ): Coord.Types.T_Coord4D
 export function Transformation(
-	matrix : Types.T_Matrix,
 	value  : Vector.Types.T_Vec|Coord.Types.T_Coord,
+	matrix : Types.T_Matrix,
 ): Vector.Types.T_Vec|Coord.Types.T_Coord
 {
 	function Transformation_2_2(
-		matrix : Types.T_Matrix_2_2,
 		value  : Vector.Types.T_Vec|Coord.Types.T_Coord,
+		matrix : Types.T_Matrix_2_2,
 	): Vector.Types.T_Vec2D|Coord.Types.T_Coord2D
 	{
 		if (Array.isArray(value))
 		{
-			if (Vector.Utils.IsVector_2(value))	return (Transformation_2_2__Vec2(matrix, value));
+			if (Vector.Utils.IsVector_2(value))	return (Transformation_2_2__Vec2(value, matrix));
 			else                                return ({} as never);
 		}
 		else
 		{
-			if (Coord.Utils.IsCoord_2(value)) return (Transformation_2_2__Coord2(matrix, value));
+			if (Coord.Utils.IsCoord_2(value)) return (Transformation_2_2__Coord2(value, matrix));
 			else                              return ({} as never);
 		}
 	};
 	function Transformation_2_3(
-		matrix : Types.T_Matrix_2_3,
 		value  : Vector.Types.T_Vec|Coord.Types.T_Coord,
+		matrix : Types.T_Matrix_2_3,
 	): Vector.Types.T_Vec2D|Coord.Types.T_Coord2D
 	{
 		if (Array.isArray(value))
 		{
-			if (Vector.Utils.IsVector_3(value))	return (Transformation_2_3__Vec3(matrix, value));
+			if (Vector.Utils.IsVector_3(value))	return (Transformation_2_3__Vec3(value, matrix));
 			else                                return ({} as never);
 		}
 		else
 		{
-			if (Coord.Utils.IsCoord_3(value)) return (Transformation_2_3__Coord3(matrix, value));
+			if (Coord.Utils.IsCoord_3(value)) return (Transformation_2_3__Coord3(value, matrix));
 			else                              return ({} as never);
 		}
 	};
 	function Transformation_3_3(
-		matrix : Types.T_Matrix_3_3,
 		value  : Vector.Types.T_Vec|Coord.Types.T_Coord,
+		matrix : Types.T_Matrix_3_3,
 	): Vector.Types.T_Vec3D|Coord.Types.T_Coord3D
 	{
 		if (Array.isArray(value))
 		{
-			if (Vector.Utils.IsVector_3(value))	return (Transformation_3_3__Vec3(matrix, value));
+			if (Vector.Utils.IsVector_3(value))	return (Transformation_3_3__Vec3(value, matrix));
 			else                                return ({} as never);
 		}
 		else
 		{
-			if (Coord.Utils.IsCoord_3(value)) return (Transformation_3_3__Coord3(matrix, value));
+			if (Coord.Utils.IsCoord_3(value)) return (Transformation_3_3__Coord3(value, matrix));
 			else                              return ({} as never);
 		}
 	};
 	function Transformation_4_4(
-		matrix : Types.T_Matrix_4_4,
 		value  : Vector.Types.T_Vec|Coord.Types.T_Coord,
+		matrix : Types.T_Matrix_4_4,
 	): Vector.Types.T_Vec4D|Coord.Types.T_Coord4D
 	{
 		if (Array.isArray(value))
 		{
-			if (Vector.Utils.IsVector_4(value))	return (Transformation_4_4__Vec4(matrix, value));
+			if (Vector.Utils.IsVector_4(value))	return (Transformation_4_4__Vec4(value, matrix));
 			else                                return ({} as never);
 		}
 		else
 		{
-			if (Coord.Utils.IsCoord_4(value)) return (Transformation_4_4__Coord4(matrix, value));
+			if (Coord.Utils.IsCoord_4(value)) return (Transformation_4_4__Coord4(value, matrix));
 			else                              return ({} as never);
 		}
 	};
 
-	if      (IsMatrix_2_2(matrix)) return (Transformation_2_2(matrix, value));
-	else if (IsMatrix_2_3(matrix)) return (Transformation_2_3(matrix, value));
-	else if (IsMatrix_3_3(matrix)) return (Transformation_3_3(matrix, value));
-	else if (IsMatrix_4_4(matrix)) return (Transformation_4_4(matrix, value));
+	if      (IsMatrix_2_2(matrix)) return (Transformation_2_2(value, matrix));
+	else if (IsMatrix_2_3(matrix)) return (Transformation_2_3(value, matrix));
+	else if (IsMatrix_3_3(matrix)) return (Transformation_3_3(value, matrix));
+	else if (IsMatrix_4_4(matrix)) return (Transformation_4_4(value, matrix));
 	else                           return ({} as never);
 };
+
+
+
+
 
 export function InverseMatrix(
 	matrix : Types.T_Matrix_2_2,

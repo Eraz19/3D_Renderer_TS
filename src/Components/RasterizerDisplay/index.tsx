@@ -21,7 +21,6 @@ const NUMBER_OF_FRAME_PER_SECOND : number = 60;
 
 export const RasterizerContext = React.createContext<UIRasterizer.Types.T_RasterizerContext>({});
 
-
 export function Component(props : Types.T_Props) : JSX.Element
 {
     const input   = React.useRef<Types.T_Input>                         (InitializeInput  ());
@@ -65,11 +64,10 @@ export function Component(props : Types.T_Props) : JSX.Element
     {
         return (
             {
-                camera                  : InitializeCamera(),
-                coordinateSystemBases_3D: UIRasterizer.Variables.coordinateSystemBases_3D,
-                background              : RASTERIZER_BACKGROUND_COLOR,
-                renderLoop              : InitalizeRenderLoop(),
-                
+                camera               : InitializeCamera(),
+                coordinateSystemBases: UIRasterizer.Variables.coordinateSystemBases3D,
+                background           : RASTERIZER_BACKGROUND_COLOR,
+                renderLoop           : InitalizeRenderLoop(),   
             }
         );
     };
@@ -103,7 +101,12 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     function InitalizeRenderLoop() : UIRasterizer.Types.T_RenderLoopState
     {
-        return ({ frameTime : 1 / NUMBER_OF_FRAME_PER_SECOND });
+        return (
+            {
+                frameTime : 1 / NUMBER_OF_FRAME_PER_SECOND,
+                frameCount: 0,
+            }
+        );
     };
 
     function InitializeCamera() : UIRasterizer.Types.T_CameraState

@@ -10,9 +10,13 @@ import * as Utils from "./utils";
 import * as Types from "./types";
 import      Style from "./style.module.scss";
 
+
+const SHOW_FPS : boolean = false;
+
 export function Component() : JSX.Element
 {
-	const sleepTimeout = React.useRef<NodeJS.Timeout>();
+	const sleepTimeout     = React.useRef<NodeJS.Timeout>();
+	const fpsDebugInterval = React.useRef<NodeJS.Timer>();
 
 	const context = React.useContext(RasterizerDisplay.RasterizerContext);
 
@@ -29,14 +33,15 @@ export function Component() : JSX.Element
 		function RemoveEvents() : void
 		{
 			observer.disconnect();
+			clearTimeout(sleepTimeout.current);
+			clearInterval(fpsDebugInterval.current)
 		};
 		
 		AddEvents(context.canvasRef);
-		RenderLoop();
+		//RenderLoop();
 		
 		return (() => { RemoveEvents(); });
 	}, []);
-
 
 	async function RenderLoop() : Promise<void>
 	{
@@ -73,8 +78,8 @@ export function Component() : JSX.Element
 		};
 
 		function IsMeshSame(
-			prevMesh ?: Types.T_ModelMesh,
-			newMesh  ?: Types.T_ModelMesh,
+			prevMesh ?: Types.T_ModelMesh<number>,
+			newMesh  ?: Types.T_ModelMesh<number>,
 		) : boolean
 		{
 			return (prevMesh === newMesh);
@@ -112,9 +117,8 @@ export function Component() : JSX.Element
 						ResizeCanvas(context.canvasSize);
 					}
 					
-
-					if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
-						Utils.RenderFrame(context.canvasRef, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
+					//if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
+						Utils.RenderFrame(context.canvasRef, context.camera, context.coordinateSystemBases, context.modelMesh, context.background);
 				}
 
 				context.renderLoop.renderEnd = new Date();
@@ -122,6 +126,7 @@ export function Component() : JSX.Element
 				remainingSecondsInFrame      = context.renderLoop.frameTime - renderTime;
 
 				await Sleep(remainingSecondsInFrame * 1000);
+				context.renderLoop.frameCount += 1;
 			};
 		}
 	};
@@ -148,7 +153,3 @@ export function Component() : JSX.Element
 export * as Utils     from "./utils";
 export * as Types     from "./types";
 export * as Variables from "./variables";
-
-
-
-
