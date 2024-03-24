@@ -39,7 +39,7 @@ export function GenerateCamera_ToWorldMatrix(camera : Types.T_PolarCamera): Matr
 	const cameraToAnchorVector     : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.Inverse(vectorFromAnchorToCamera));
 	const cameraToSideVector       : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.CrossProduct(cameraToAnchorVector, [0,0,1]));
 	const cameraToTopVector        : Vector.Types.T_Vec3D = Vector.Utils.Normalize(Vector.Utils.CrossProduct(cameraToSideVector, cameraToAnchorVector));
-	const cameraCoord              : Vector.Types.T_Vec3D = Vector.Utils.Add(Coord.Utils.FromCoord_ToVec({ x: camera.anchor.x, y: camera.anchor.y, z: camera.anchor.z }), vectorFromAnchorToCamera);
+	const cameraCoord              : Vector.Types.T_Vec3D = Vector.Utils.Add([camera.anchor.x,camera.anchor.y,camera.anchor.z], vectorFromAnchorToCamera);
 
 	return (
 		[

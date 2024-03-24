@@ -8,6 +8,76 @@ import * as Bresenham  from "../../../Utils/Bresenham";
 import * as Types from "./types";
 
 
+let debug : string = "";
+
+function CameraDebug(camera : Types.T_CameraState) : string
+{
+	return (
+		`
+			Phi    = ${camera.polarCoord.phi}
+			Theta  = ${camera.polarCoord.theta}
+			Radius = ${camera.polarCoord.radius}
+
+			Anchor = ${CoordPrinting_3(camera.anchor)}
+		`
+	);
+};
+
+function CoordPrinting_3(coord :  Coord.Types.T_Coord3D) : string
+{
+	return (`[${coord.x},${coord.y},${coord.z}]`);
+};
+
+function MatrixPrinting_4(matrix : Matrix.Types.T_Matrix_4_4) : string
+{
+	return (
+		`	
+			[${matrix[0][0]},${matrix[0][1]},${matrix[0][2]},${matrix[0][3]}]
+			[${matrix[1][0]},${matrix[1][1]},${matrix[1][2]},${matrix[1][3]}]
+			[${matrix[2][0]},${matrix[2][1]},${matrix[2][2]},${matrix[2][3]}]
+			[${matrix[3][0]},${matrix[3][1]},${matrix[3][2]},${matrix[3][3]}]
+		`
+	);
+};
+
+function MatrixPrinting_3(matrix : Matrix.Types.T_Matrix_3_3) : string
+{
+	return (
+		`
+			[${matrix[0][0]},${matrix[0][1]},${matrix[0][2]}]
+			[${matrix[1][0]},${matrix[1][1]},${matrix[1][2]}]
+			[${matrix[2][0]},${matrix[2][1]},${matrix[2][2]}]
+		`
+	);
+};
+
+function ColorPrinting(color : Color.RGB.Types.T_Color) : string
+{
+	if      (color.red   === 255) return ("RED");
+	else if (color.green === 255) return ("GREEN");
+	else if (color.blue  === 255) return ("BLUE");
+	else                          return ("BLACK");
+};
+
+function EdgesPrinting(edges : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex>) : string
+{
+	return (
+		edges
+		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string => { return (`			[${Vector3(edge.edge[0])},${Vector3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`); })
+		.reduce((prev : string, current : string) : string => { return (`${prev}\n${current}`) }, "")
+	);	
+};
+
+function Vector3(vector : Vector.Types.T_Vec3D) : string
+{
+	return (`[${vector[0]},${vector[1]},${vector[2]}]`);
+};
+
+function DebugPrinting() : void
+{
+	console.log(debug);
+};
+
 /********************* Prepare Vertices *********************/
 
 function Transformation_3_3(
@@ -15,8 +85,8 @@ function Transformation_3_3(
 	matrix : Matrix.Types.T_Matrix_3_3,
 ): void
 {
-	const newVectorX : number = (matrix[1][0] * vector[0]) + (matrix[1][1] * vector[1]) + (matrix[1][2] * vector[2]);
-	const newVectorY : number = (matrix[0][0] * vector[0]) + (matrix[0][1] * vector[1]) + (matrix[0][2] * vector[2]);
+	const newVectorX : number = (matrix[0][0] * vector[0]) + (matrix[0][1] * vector[1]) + (matrix[0][2] * vector[2]);
+	const newVectorY : number = (matrix[1][0] * vector[0]) + (matrix[1][1] * vector[1]) + (matrix[1][2] * vector[2]);
 	const newVectorZ : number = (matrix[2][0] * vector[0]) + (matrix[2][1] * vector[1]) + (matrix[2][2] * vector[2]);
 
 	vector[0] = newVectorX;
@@ -29,9 +99,9 @@ function Add_3(
 	vector2 : Vector.Types.T_Vec3D,
 ): void
 {
-	vector1[0] = vector1[0] + vector2[0];
-	vector1[1] = vector1[1] + vector2[1];
-	vector1[2] = vector1[2] + vector2[2];
+	vector1[0] += vector2[0];
+	vector1[1] += vector2[1];
+	vector1[2] += vector2[2];
 };
 
 function CenterDisplayOrigin(
@@ -77,8 +147,16 @@ function FromWorldSpace_ToDisplaySpace(
 			let result : Types.T_ModelMesh_Vertex = [...vertex];
 
 			FromWorldSpace_ToCameraSpace  (result, scalingAndRotationMatrix, translationVector);
+
+			//console.log("coordinateSystemInCameraSpace: ", [...result]);
+
 			FromCameraSpace_ToDisplaySpace(result, cameraRadius                               );
+
+			//console.log("coordinateSystemInDisplaySpace: ", [...result]);
+
 			CenterDisplayOrigin           (result, displayWidth            , displayHeight    );
+
+			//console.log("coordinateSystemInDisplaySpace_Centered: ", [...result]);
 
 			return (result);
 		})
@@ -360,7 +438,11 @@ export function RenderFrame(
 		
 		if (context)
 		{
-			const timeStart : Date = new Date();
+			debug = "";
+
+			debug += "Camera: \n";
+			debug += CameraDebug(camera);
+			debug += "\n";
 
 			const canvasWidth  : number = context.canvas.width;
 			const canvasHeight : number = context.canvas.height;
@@ -369,9 +451,29 @@ export function RenderFrame(
 			const imagedata : ImageData = context.createImageData(canvasWidth, canvasHeight);
 
 			const cameraToWorldMatrix      : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
+
+			debug += "cameraToWorldMatrix: \n";
+			debug += MatrixPrinting_4(cameraToWorldMatrix);
+			debug += "\n";
+
 			const worldToCameraMatrix      : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+
+			debug += "worldToCameraMatrix: \n";
+			debug += MatrixPrinting_4(worldToCameraMatrix);
+			debug += "\n";
+
 			const rotationAndScalingMatrix : Matrix.Types.T_Matrix_3_3 = ExtractRotateAndScaleMatrix_FromWorldToCameraMatrix(worldToCameraMatrix);
+			
+			debug += "rotationAndScalingMatrix: \n";
+			debug += MatrixPrinting_3(rotationAndScalingMatrix);
+			debug += "\n";
+
 			const translationVector        : Vector.Types.T_Vec3D      = ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix);
+
+			debug += "translationVector: \n\n\t\t\t";
+			debug += Vector3(translationVector);
+			debug += "\n";
+			debug += "\n";
 		
 			let modelEdgesWithVertices : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex> = [];
 
@@ -390,9 +492,16 @@ export function RenderFrame(
 					) as Types.T_CoordinateBases3D_Vertices,
 				};
 
+				//console.log("edges: ", newCoordinateSystemBases.edges);
+
+
 				modelEdgesWithVertices = [...modelEdgesWithVertices, ...FromEdgesIndex_ToEdgesVertices(newCoordinateSystemBases.edges, newCoordinateSystemBases.vertices)];
+
+				debug += "modelEdgesWithVertices: \n";
+				debug += EdgesPrinting(FromEdgesIndex_ToEdgesVertices(newCoordinateSystemBases.edges, newCoordinateSystemBases.vertices));
+				debug += "\n";
 			}
-			if (mesh)
+			/*if (mesh)
 			{
 				const newMesh : Types.T_ModelMesh<number> =
 				{
@@ -408,9 +517,9 @@ export function RenderFrame(
 				};
 
 				modelEdgesWithVertices = [...modelEdgesWithVertices, ...FromEdgesIndex_ToEdgesVertices(newMesh.edges, newMesh.vertices)];
-			}
+			}*/
 
-			console.log(modelEdgesWithVertices);
+			//console.log(modelEdgesWithVertices);
 
 			if (background)
 				RenderCanvasBackground (imagedata.data, context, background);
@@ -422,8 +531,7 @@ export function RenderFrame(
 
 			context.putImageData(imagedata, 0, 0);
 
-			const timeEnd : Date = new Date();
-			console.log(timeEnd.getTime() - timeStart.getTime());
+			DebugPrinting();
 
 			UpdateCamera(camera, cameraToWorldMatrix, worldToCameraMatrix);
 		}
