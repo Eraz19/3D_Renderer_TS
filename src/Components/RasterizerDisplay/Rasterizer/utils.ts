@@ -110,8 +110,7 @@ export function CenterDisplayOrigin(
 	displayHeight : number,
 ):Coord.Types.T_Coord3D
 {
-	console.log(displayWidth);
-	console.log(displayHeight);
+	console.log({...coord});
 
 	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
 };
