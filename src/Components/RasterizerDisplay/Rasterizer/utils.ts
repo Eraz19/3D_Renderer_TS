@@ -3,6 +3,7 @@ import * as Matrix     from "../../../Utils/Matrix";
 import * as Coord      from "../../../Utils/Coord";
 import * as Color      from "../../../Utils/Color";
 import * as Vector     from "../../../Utils/Vector";
+import * as Bresenham  from "../../../Utils/Bresenham";
 
 import * as Types from "./types";
 
@@ -169,7 +170,7 @@ function RemoveEdgesPartOutsideOfCanvas(
 		const vectorFactor : number = (limit - vertexXInCanvas) / (vertexOutCanvas[0] - vertexXInCanvas);
 
 		vertexOutCanvas[0] = limit;
-		vertexOutCanvas[1] = Math.floor(vertexYInCanvas + ((vertexOutCanvas[1] - vertexYInCanvas) * vectorFactor)),
+		vertexOutCanvas[1] = Math.floor(vertexYInCanvas + ((vertexOutCanvas[1] - vertexYInCanvas) * vectorFactor));
 	};
 
 	function GetNewLineInCanvas_Diagonal(
@@ -271,6 +272,34 @@ function RenderCanvasBackground(
 	}
 };
 
+function RenderLines(
+	buffer      : Uint8ClampedArray,
+	canvasWidth : number,
+) : (edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) => void
+{
+	function DrawLinePointsOnCanvas(
+		linePointsCoord : Vector.Types.T_Vec2D[],
+		color           : Color.RGB.Types.T_Color,
+	) : void
+	{
+		const colorRed   : number = color.red;
+		const colorGreen : number = color.green;
+		const colorBlue  : number = color.blue;
+
+		linePointsCoord.map((linePointCoord : Vector.Types.T_Vec2D) : void =>
+		{
+			FillPixelBuffer(buffer, canvasWidth, linePointCoord[0], linePointCoord[1], colorRed, colorGreen, colorBlue);
+		});	
+	};
+
+	return (
+		(edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : void =>
+		{			
+			DrawLinePointsOnCanvas(Bresenham.Utils.BresenhamLinePoints(edge.edge[0][0], edge.edge[0][1], edge.edge[1][0], edge.edge[1][1]), edge.color);
+		}
+	);
+};
+
 /********************* Other *********************/
 
 function UpdateCamera(
@@ -301,8 +330,6 @@ function UpdateCamera(
 	camera.cameraToTopVector    = ExtractCameraToTopVector_FromCameraToWorldMatrix   (worldToCameraMatrix);
 };
 
-
-
 export function RenderFrame(
 	canvas                  : HTMLCanvasElement | undefined,
 	camera                  : Types.T_CameraState,
@@ -327,49 +354,24 @@ export function RenderFrame(
 		return ([worldToCameraMatrix[0][3],worldToCameraMatrix[1][3],worldToCameraMatrix[2][3]]);
 	};
 
-
-	function RenderLines(edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : void
-	{
-		function DrawLinePointsOnCanvas(
-			linePointsCoord : Coord.Types.T_Coord2D[],
-			color           : Color.RGB.Types.T_Color,
-		): void
-		{
-			const canvasWidth : number = context.canvas.width;
-			const colorRed    : number = color.red;
-			const colorGreen  : number = color.green;
-			const colorBlue   : number = color.blue;
-
-			linePointsCoord.map((linePointCoord:Coord.Types.T_Coord2D): void => { FillPixelBuffer(buffer, canvasWidth, linePointCoord.x, linePointCoord.y, colorRed, colorGreen, colorBlue); });	
-		};
-
-		DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(line.coord), line.color);
-	};
-
 	if (canvas != null)
 	{
 		const context : CanvasRenderingContext2D|null = canvas.getContext("2d");
 		
 		if (context)
 		{
-			//const timeStart : Date = new Date();
-
-			const imagedata : ImageData = context.createImageData(context.canvas.width, context.canvas.height);
-
-			//const timeAfterImageDataCreation : Date = new Date();
-			//console.log("Time To prepare buffer: ", (timeAfterImageDataCreation.getTime() - timeStart.getTime()) );
-
-			const cameraToWorldMatrix      : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
-			const worldToCameraMatrix      : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
-			const rotationAndScalingMatrix : Matrix.Types.T_Matrix_3_3 = ExtractRotateAndScaleMatrix_FromWorldToCameraMatrix(worldToCameraMatrix);
-			const translationVector        : Vector.Types.T_Vec3D      = ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix);
+			const timeStart : Date = new Date();
 
 			const canvasWidth  : number = context.canvas.width;
 			const canvasHeight : number = context.canvas.height;
 			const cameraRaduis : number = camera.polarCoord.radius;
 
-			//const timeCreationMatrices : Date = new Date();
-			//console.log("Time To create Matrices: ", (timeCreationMatrices.getTime() - timeAfterImageDataCreation.getTime()) );
+			const imagedata : ImageData = context.createImageData(canvasWidth, canvasHeight);
+
+			const cameraToWorldMatrix      : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
+			const worldToCameraMatrix      : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+			const rotationAndScalingMatrix : Matrix.Types.T_Matrix_3_3 = ExtractRotateAndScaleMatrix_FromWorldToCameraMatrix(worldToCameraMatrix);
+			const translationVector        : Vector.Types.T_Vec3D      = ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix);
 		
 			let modelEdgesWithVertices : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex> = [];
 
@@ -408,43 +410,20 @@ export function RenderFrame(
 				modelEdgesWithVertices = [...modelEdgesWithVertices, ...FromEdgesIndex_ToEdgesVertices(newMesh.edges, newMesh.vertices)];
 			}
 
-			//let timeToRenderBackground : Date | undefined = undefined;
+			console.log(modelEdgesWithVertices);
 
 			if (background)
-			{
 				RenderCanvasBackground (imagedata.data, context, background);
-				//timeToRenderBackground = new Date();
-				//console.log("Time To render background: ", (timeToRenderBackground.getTime() - timeToCalculateLineToRenderInDisplay.getTime()) );
-			}
 
 			modelEdgesWithVertices
 			.filter(RemoveEdgesOutOfCanvas(canvasWidth, canvasHeight))
 			.sort  (SortLineToGetLineRestpectDeepness)
-			.map   (RenderLines);
-
-			//const timeCalculateCoordinateSystemInCameraSpace : Date = new Date();
-			//console.log("Time To calculate coord system in Camera Space: ", (timeCalculateCoordinateSystemInCameraSpace.getTime() - timeCreationMatrices.getTime()) );
-
-			//const meshLines         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Polygone.Utils.FromColoredPolygones_ToColoredLines(mesh ?? []);
-
-			//const timeToGoFromPolygonesToLines : Date = new Date();
-			//console.log("From Polygone to Lines", (timeToGoFromPolygonesToLines.getTime() - timeCalculateCoordinateSystemInCameraSpace.getTime()));
-
-			//const timeCalculateMeshModelInCameraSpace : Date = new Date();
-			//console.log("Time To calculate mesh model in Camera Space: ", (timeCalculateMeshModelInCameraSpace.getTime() - timeCalculateCoordinateSystemInCameraSpace.getTime()) );
-
-			//const timeToCalculateLineToRenderInDisplay : Date = new Date();
-			//console.log("Time To calculate lines to render in display: ", (timeToCalculateLineToRenderInDisplay.getTime() - timeCalculateMeshModelInCameraSpace.getTime()) );
-			
-
-			//const timeToRenderAllLines : Date = new Date();
-			//if (timeToRenderBackground) console.log("Time To render line (background): "   , (timeToRenderAllLines.getTime() - timeToRenderBackground.getTime()) );
-			//else                        console.log("Time To render line (no background): ", (timeToRenderAllLines.getTime() - timeToCalculateLineToRenderInDisplay.getTime()) );
+			.map   (RenderLines(imagedata.data, canvasWidth));
 
 			context.putImageData(imagedata, 0, 0);
 
-			//const putBuggerInCanvas : Date = new Date();
-			//console.log("Put buffer in canvas: ", (putBuggerInCanvas.getTime() - timeToRenderAllLines.getTime()) );
+			const timeEnd : Date = new Date();
+			console.log(timeEnd.getTime() - timeStart.getTime());
 
 			UpdateCamera(camera, cameraToWorldMatrix, worldToCameraMatrix);
 		}

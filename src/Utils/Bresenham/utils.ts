@@ -1,50 +1,85 @@
-import * as Line  from "../Shapes/Line";
-import * as Coord from "../Coord";
+import * as Vector from "../Vector";
 
 
-function HorizontalLinePoints(line : Line.Types.T_Line2D): Coord.Types.T_Coord2D[]
+export function DeltaX(vertex1X : number, vertex2X : number) : number { return (vertex2X - vertex1X); };
+export function DeltaY(vertex1Y : number, vertex2Y : number) : number { return (vertex2Y - vertex1Y); };
+
+function HorizontalLinePoints(
+	vertex1X : number,
+	vertex1Y : number,
+	vertex2X : number,
+	vertex2Y : number,
+): Vector.Types.T_Vec2D[]
 {
-	const orderedLinePoints : Line.Types.T_Line2D = (line.start.x < line.end.x) ? line : { start: line.end, end: line.start };
-	const pixelY            : number              = orderedLinePoints.start.y;
+	let startVertexX : number                 = vertex1X;
+	let startVertexY : number                 = vertex1Y;
+	let endVertexX   : number                 = vertex2X;
+	let result       : Vector.Types.T_Vec2D[] = [];
 
-	let result : Coord.Types.T_Coord2D[] = [];
+	if (vertex1X > vertex2X)
+	{
+		startVertexX = vertex2X;
+		startVertexY = vertex2Y;
+		endVertexX   = vertex1X;
+	}
 
-	for (let pixelX : number = orderedLinePoints.start.x; pixelX <= orderedLinePoints.end.x; ++pixelX)
-		result = [...result, { x: pixelX, y: pixelY }];
+	for (let pixelX : number = startVertexX; pixelX <= endVertexX; ++pixelX)
+		result = [...result, [pixelX,startVertexY]];
 
 	return (result);
 };
 
-function VerticalLinePoints(line : Line.Types.T_Line2D): Coord.Types.T_Coord2D[]
+function VerticalLinePoints(
+	vertex1X : number,
+	vertex1Y : number,
+	vertex2X : number,
+	vertex2Y : number,
+): Vector.Types.T_Vec2D[]
 {
-	const orderedLinePoints : Line.Types.T_Line2D = (line.start.y < line.end.y) ? line : { start: line.end, end: line.start };
-	const pixelX            : number              = orderedLinePoints.start.x;
+	let startVertexX : number                 = vertex1X;
+	let startVertexY : number                 = vertex1Y;
+	let endVertexY   : number                 = vertex2Y;
+	let result       : Vector.Types.T_Vec2D[] = [];
 
-	let result : Coord.Types.T_Coord2D[] = [];
+	if (vertex1Y > vertex2Y)
+	{
+		startVertexX = vertex2X;
+		startVertexY = vertex2Y;
+		endVertexY   = vertex1Y;
+	}
 
-	for (let pixelY : number = orderedLinePoints.start.y; pixelY <= orderedLinePoints.end.y; ++pixelY)
-		result = [...result, { x: pixelX, y: pixelY }];
+	for (let pixelY : number = startVertexY; pixelY <= endVertexY; ++pixelY)
+		result = [...result, [startVertexX,pixelY]];
 
 	return (result);
 };
 
 function HorizontalDiagonalPoints(
-	line   : Line.Types.T_Line2D,
-	deltaX : number,
-	deltaY : number,
-): Coord.Types.T_Coord2D[]
+	vertex1X : number,
+	vertex1Y : number,
+	vertex2X : number,
+	deltaX   : number,
+	deltaY   : number,
+): Vector.Types.T_Vec2D[]
 {
-	const yForEachXIteration : number              = deltaY / deltaX;
-	const yIterator          : number              = (yForEachXIteration >= 0) ? 1 : -1;
-	const orderedLinePoints  : Line.Types.T_Line2D = (line.start.x < line.end.x) ? line : { start: line.end, end: line.start };
+	let startVertexX          : number                 = vertex1X;
+	let endVertexX            : number                 = vertex2X;
+	let floatErrorAccumulator : number                 = -.5;
+	let pixelY                : number                 = vertex1Y;
+	let result                : Vector.Types.T_Vec2D[] = [];
 
-	let floatErrorAccumulator : number                  = -.5;
-	let pixelY                : number                  = orderedLinePoints.start.y;
-	let result                : Coord.Types.T_Coord2D[] = [];
+	const yForEachXIteration : number = deltaY / deltaX;
+	const yIterator          : number = (yForEachXIteration >= 0) ? 1 : -1;
 
-	for (let pixelX : number = orderedLinePoints.start.x; pixelX <= orderedLinePoints.end.x; ++pixelX)
+	if (vertex1X > vertex2X)
 	{
-		result = [...result, { x: pixelX, y: pixelY }];
+		startVertexX = vertex2X;
+		endVertexX   = vertex1X;
+	}
+
+	for (let pixelX : number = startVertexX; pixelX <= endVertexX; ++pixelX)
+	{
+		result = [...result, [pixelX,pixelY]];
 		floatErrorAccumulator += Math.abs(yForEachXIteration);
 
 		if (floatErrorAccumulator >= 0)
@@ -58,22 +93,31 @@ function HorizontalDiagonalPoints(
 };
 
 function VerticalDiagonalPoints(
-	line   : Line.Types.T_Line2D,
-	deltaX : number,
-	deltaY : number,
-): Coord.Types.T_Coord2D[]
-{
-	const xForEachYIteration : number              = deltaX / deltaY;
-	const xIterator          : number              = (xForEachYIteration >= 0) ? 1 : -1;
-	const orderedLinePoints  : Line.Types.T_Line2D = (line.start.y < line.end.y) ? line : { start: line.end, end: line.start };
+	vertex1X : number,
+	vertex1Y : number,
+	vertex2Y : number,
+	deltaX   : number,
+	deltaY   : number,
+): Vector.Types.T_Vec2D[]
+{	
+	let startVertexY          : number                 = vertex1Y;
+	let endVertexY            : number                 = vertex2Y;
+	let floatErrorAccumulator : number                 = -.5;
+	let pixelX                : number                 = vertex1X;
+	let result                : Vector.Types.T_Vec2D[] = [];
 
-	let floatErrorAccumulator : number                  = -.5;
-	let pixelX                : number                  = orderedLinePoints.start.x;
-	let result                : Coord.Types.T_Coord2D[] = [];
+	const xForEachYIteration : number = deltaX / deltaY;
+	const xIterator          : number = (xForEachYIteration >= 0) ? 1 : -1;
 
-	for (let pixelY : number = orderedLinePoints.start.y; pixelY <= orderedLinePoints.end.y; ++pixelY)
+	if (vertex1Y > vertex2Y)
 	{
-		result = [...result, { x: pixelX, y: pixelY }];
+		startVertexY = vertex2Y;
+		endVertexY   = vertex1Y;
+	}
+
+	for (let pixelY : number = startVertexY; pixelY <= endVertexY; ++pixelY)
+	{
+		result = [...result, [pixelX,pixelY]];
 		floatErrorAccumulator += Math.abs(xForEachYIteration);
 
 		if (floatErrorAccumulator >= 0)
@@ -86,13 +130,18 @@ function VerticalDiagonalPoints(
 	return (result);
 };
 
-export function BresenhamLinePoints(line : Line.Types.T_Line2D): Coord.Types.T_Coord2D[]
+export function BresenhamLinePoints(
+	vertex1X : number,
+	vertex1Y : number,
+	vertex2X : number,
+	vertex2Y : number,
+): Vector.Types.T_Vec2D[]
 {
-	const deltaX : number = Line.Utils.DeltaX(line);
-	const deltaY : number = Line.Utils.DeltaY(line);
+	const deltaX : number = DeltaX(vertex1X, vertex2X);
+	const deltaY : number = DeltaY(vertex1Y, vertex2Y);
 
-	if      (deltaX === 0)                         return (VerticalLinePoints      (line                ));
-	else if (deltaY === 0)                         return (HorizontalLinePoints    (line                ));
-	else if (Math.abs(deltaX) >= Math.abs(deltaY)) return (HorizontalDiagonalPoints(line, deltaX, deltaY));
-	else                                           return (VerticalDiagonalPoints  (line, deltaX, deltaY));
+	if      (deltaX === 0)                         return (VerticalLinePoints      (vertex1X, vertex1Y, vertex2X, vertex2Y                ));
+	else if (deltaY === 0)                         return (HorizontalLinePoints    (vertex1X, vertex1Y, vertex2X, vertex2Y                ));
+	else if (Math.abs(deltaX) >= Math.abs(deltaY)) return (HorizontalDiagonalPoints(vertex1X, vertex1Y, vertex2X,           deltaX, deltaY));
+	else                                           return (VerticalDiagonalPoints  (vertex1X, vertex1Y,           vertex2Y, deltaX, deltaY));
 };

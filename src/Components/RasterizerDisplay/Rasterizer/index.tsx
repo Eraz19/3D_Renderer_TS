@@ -11,8 +11,6 @@ import * as Types from "./types";
 import      Style from "./style.module.scss";
 
 
-const SHOW_FPS : boolean = false;
-
 export function Component() : JSX.Element
 {
 	const sleepTimeout     = React.useRef<NodeJS.Timeout>();
@@ -38,7 +36,7 @@ export function Component() : JSX.Element
 		};
 		
 		AddEvents(context.canvasRef);
-		//RenderLoop();
+		RenderLoop();
 		
 		return (() => { RemoveEvents(); });
 	}, []);
@@ -117,7 +115,7 @@ export function Component() : JSX.Element
 						ResizeCanvas(context.canvasSize);
 					}
 					
-					//if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
+					if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
 						Utils.RenderFrame(context.canvasRef, context.camera, context.coordinateSystemBases, context.modelMesh, context.background);
 				}
 
