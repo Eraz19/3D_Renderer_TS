@@ -296,12 +296,22 @@ function GetLinesToRender(
 	camera                : Rasterizer.PolarCamera.Types.T_PolarCamera,
 ): (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[]
 {
-	function LineFromCameraSpace_ToDisplaySpace(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
+	function LineFromCameraSpace_ToDisplaySpace(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>, index : number): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
 	{
+		if (index === 0)
+		{
+			debug += `Vertex0 ${"FromCameraSpace_ToDisplaySpace"}: ${CoordPrinting_3(FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius))}\n`;
+			debug += `Vertex0 ${"CenterDisplayOrigin"}           : ${CoordPrinting_3(CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height))}\n`;
+		}
+
+		debug += `Vertex${index + 1} ${"FromCameraSpace_ToDisplaySpace"}: ${CoordPrinting_3(FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius))}\n`
+		debug += `Vertex${index + 1} ${"CenterDisplayOrigin"}           : ${CoordPrinting_3(CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height))}\n`
+
+
 		const lineInDisplay : Line.Types.T_Line3D | null = RemoveLinePartOutsideOfCanvas(
 			{
-				start: Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height),
-				end  : Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height),
+				start: CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height),
+				end  : CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height),
 			},
 			{
 				width : context.canvas.clientWidth,
