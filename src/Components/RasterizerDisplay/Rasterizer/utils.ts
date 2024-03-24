@@ -107,6 +107,17 @@ function Add_3(
 	vector1[2] += vector2[2];
 };
 
+/*
+export function CenterDisplayOrigin(
+	coord         : Coord.Types.T_Coord3D,
+	displayWidth  : number,
+	displayHeight : number,
+):Coord.Types.T_Coord3D
+{
+	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
+};
+*/
+
 function CenterDisplayOrigin(
 	vertex        : Types.T_ModelMesh_Vertex,
 	displayWidth  : number,
