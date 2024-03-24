@@ -8,6 +8,83 @@ import * as Vector     from "../../../Utils/Vector";
 
 import * as Types from "./types";
 
+let debug : string = "";
+
+
+
+function CameraDebug(camera : Types.T_CameraState) : string
+{
+	return (
+		`
+			Phi    = ${camera.polarCoord.phi}
+			Theta  = ${camera.polarCoord.theta}
+			Radius = ${camera.polarCoord.radius}
+
+			Anchor = ${CoordPrinting_3(camera.anchor)}
+		`
+	);
+};
+
+function CoordPrinting_3(coord :  Coord.Types.T_Coord3D) : string
+{
+	return (`[${coord.x},${coord.y},${coord.z}]`);
+};
+
+function MatrixPrinting_4(matrix : Matrix.Types.T_Matrix_4_4) : string
+{
+	return (
+		`	
+			[${matrix[0][0]},${matrix[0][1]},${matrix[0][2]},${matrix[0][3]}]
+			[${matrix[1][0]},${matrix[1][1]},${matrix[1][2]},${matrix[1][3]}]
+			[${matrix[2][0]},${matrix[2][1]},${matrix[2][2]},${matrix[2][3]}]
+			[${matrix[3][0]},${matrix[3][1]},${matrix[3][2]},${matrix[3][3]}]
+		`
+	);
+};
+
+function MatrixPrinting_3(matrix : Matrix.Types.T_Matrix_3_3) : string
+{
+	return (
+		`
+			[${matrix[0][0]},${matrix[0][1]},${matrix[0][2]}]
+			[${matrix[1][0]},${matrix[1][1]},${matrix[1][2]}]
+			[${matrix[2][0]},${matrix[2][1]},${matrix[2][2]}]
+		`
+	);
+};
+
+function ColorPrinting(color : Color.RGB.Types.T_Color) : string
+{
+	if      (color.red   === 255) return ("RED");
+	else if (color.green === 255) return ("GREEN");
+	else if (color.blue  === 255) return ("BLUE");
+	else                          return ("BLACK");
+};
+
+/*function EdgesPrinting(edges : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex>) : string
+{
+	return (
+		edges
+		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string =>
+		{
+			return (`			[${VectorPrinting3(edge.edge[0])},${VectorPrinting3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`);
+		})
+		.reduce((prev : string, current : string) : string => { return (`${prev}\n${current}`) }, "")
+	);	
+};*/
+
+function VectorPrinting3(vector : Vector.Types.T_Vec3D) : string
+{
+	return (`[${vector[0]},${vector[1]},${vector[2]}]`);
+};
+
+function DebugPrinting() : void
+{
+	console.log(debug);
+};
+
+
+
 
 function UpdateCamera(
 	camera              : Types.T_CameraState,
@@ -170,12 +247,6 @@ function GetLinesToRender(
 {
 	function LineFromCameraSpace_ToDisplaySpace(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
 	{
-		console.log("FromCameraSpace_ToDisplaySpace_Coord start: ", Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height);
-		console.log("FromCameraSpace_ToDisplaySpace_Coord end: ", Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height);
-
-		console.log("FromCameraSpace_ToDisplaySpace_Coord start_centered: ",Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height));
-		console.log("FromCameraSpace_ToDisplaySpace_Coord end_centered: ",Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height));
-
 		const lineInDisplay : Line.Types.T_Line3D | null = RemoveLinePartOutsideOfCanvas(
 			{
 				start: Rasterizer.Utils.CenterDisplayOrigin(Rasterizer.Utils.FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height),
@@ -257,19 +328,29 @@ export function RenderFrame(
 		
 		if (context)
 		{
+			debug += "";
+
+			debug += "Camera: ";
+			debug += CameraDebug(camera);
+			debug += "\n\n";
+
 			const imagedata : ImageData = context.createImageData(context.canvas.width, context.canvas.height);
 
 			const cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
 
-			console.log("cameraToWorldMatrix: ", cameraToWorldMatrix);
+			debug += "cameraToWorldMatrix: \n"
+			debug += MatrixPrinting_4(cameraToWorldMatrix);
+			debug += "\n\n";
 
 			const worldToCameraMatrix : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
 
-			console.log("worldToCameraMatrix: ", worldToCameraMatrix);
+			debug += "worldToCameraMatrix: \n"
+			debug += MatrixPrinting_4(worldToCameraMatrix);
+			debug += "\n\n";
 
 			const coordinateSystemInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, coordinateSystemBases ?? []);
 
-			console.log("coordinateSystemInCameraSpace: ", coordinateSystemInCameraSpace);
+			
 
 			const meshLines         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Polygone.Utils.FromColoredPolygones_ToColoredLines(mesh ?? []);
 			const meshInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, meshLines);
@@ -283,6 +364,8 @@ export function RenderFrame(
 			RenderAllFrameLines(imagedata.data, context, [...coordinateSystemLinesToRender, ...meshLinesToRender]);
 
 			context.putImageData(imagedata, 0, 0);
+
+			DebugPrinting();
 			UpdateCamera(camera, cameraToWorldMatrix, worldToCameraMatrix);
 		}
 	}
