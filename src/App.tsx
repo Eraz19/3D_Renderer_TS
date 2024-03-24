@@ -44,6 +44,13 @@ function App() : JSX.Element
 							bottom: false,
 						}
 					}
+					header         = 
+					{
+						{
+							height  : 40,
+							children: <div style={{ width : "100%", height : "100%", background: "red" }}></div>
+						}
+					}
 					window         =
 					{
 						{
