@@ -61,17 +61,20 @@ function ColorPrinting(color : Color.RGB.Types.T_Color) : string
 	else                          return ("BLACK");
 };
 
-/*function EdgesPrinting(edges : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex>) : string
+function LinesPrintingInCamera(lines : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[], value : string) : string
 {
 	return (
-		edges
-		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string =>
-		{
-			return (`			[${VectorPrinting3(edge.edge[0])},${VectorPrinting3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`);
-		})
-		.reduce((prev : string, current : string) : string => { return (`${prev}\n${current}`) }, "")
-	);	
-};*/
+		`
+Vertex0 ${value}  : ${CoordPrinting_3(lines[0].coord.start)}
+
+Vertex1 ${value}  : ${CoordPrinting_3(lines[0].coord.end)}
+
+Vertex2 ${value}  : ${CoordPrinting_3(lines[1].coord.end)}
+
+Vertex3 ${value}  : ${CoordPrinting_3(lines[2].coord.end)}
+		`
+	);
+};
 
 function VectorPrinting3(vector : Vector.Types.T_Vec3D) : string
 {
@@ -83,8 +86,56 @@ function DebugPrinting() : void
 	console.log(debug);
 };
 
+/***************************************************************/
 
+function FromCoordWorld_ToCoordCamera(
+	cameraMatrix : Matrix.Types.T_Matrix_4_4,
+	coord        : Coord.Types.T_Coord3D,
+) : Coord.Types.T_Coord3D
+{
+	return ({ ...Matrix.Utils.Transformation(cameraMatrix, { ...coord, w: 1 }) });
+};
 
+export function FromCameraSpace_ToDisplaySpace_Coord(
+	coord        : Coord.Types.T_Coord3D,
+	cameraRadius : number,
+): Coord.Types.T_Coord3D
+{
+	return (Matrix.Utils.Transformation([[0,cameraRadius,0],[0,0,cameraRadius],[cameraRadius,0,0]], coord));
+};
+
+export function CenterDisplayOrigin(
+	coord         : Coord.Types.T_Coord3D,
+	displayWidth  : number,
+	displayHeight : number,
+):Coord.Types.T_Coord3D
+{
+	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
+};
+
+export function FromWorldSpace_ToCameraSpace(
+	cameraMatrix : Matrix.Types.T_Matrix_4_4,
+	mesh         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[],
+): Line.Types.T_ColoredLine<Line.Types.T_Line3D>[]
+{
+	return (
+		mesh.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> =>
+		{
+			return (
+				{
+					color: line.color,
+					coord:
+					{
+						start: FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.start),
+						end  : FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.end),
+					}
+				}
+			);
+		})
+	);
+};
+
+/***************************************************************/
 
 function UpdateCamera(
 	camera              : Types.T_CameraState,
@@ -330,9 +381,9 @@ export function RenderFrame(
 		{
 			debug += "";
 
-			debug += "Camera: ";
+			debug += "Camera: \n";
 			debug += CameraDebug(camera);
-			debug += "\n\n";
+			debug += "\n";
 
 			const imagedata : ImageData = context.createImageData(context.canvas.width, context.canvas.height);
 
@@ -340,7 +391,7 @@ export function RenderFrame(
 
 			debug += "cameraToWorldMatrix: \n"
 			debug += MatrixPrinting_4(cameraToWorldMatrix);
-			debug += "\n\n";
+			debug += "\n";
 
 			const worldToCameraMatrix : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
 
@@ -348,9 +399,9 @@ export function RenderFrame(
 			debug += MatrixPrinting_4(worldToCameraMatrix);
 			debug += "\n\n";
 
-			const coordinateSystemInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, coordinateSystemBases ?? []);
+			const coordinateSystemInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = FromWorldSpace_ToCameraSpace(worldToCameraMatrix, coordinateSystemBases ?? []);
 
-			
+			debug += LinesPrintingInCamera(coordinateSystemInCameraSpace, "FromWorldSpace_ToCameraSpace");
 
 			const meshLines         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Polygone.Utils.FromColoredPolygones_ToColoredLines(mesh ?? []);
 			const meshInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, meshLines);
