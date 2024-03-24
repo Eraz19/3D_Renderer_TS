@@ -63,7 +63,10 @@ function EdgesPrinting(edges : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex>
 {
 	return (
 		edges
-		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string => { return (`			[${VectorPrinting3(edge.edge[0])},${VectorPrinting3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`); })
+		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string =>
+		{
+			return (`			[${VectorPrinting3(edge.edge[0])},${VectorPrinting3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`);
+		})
 		.reduce((prev : string, current : string) : string => { return (`${prev}\n${current}`) }, "")
 	);	
 };
