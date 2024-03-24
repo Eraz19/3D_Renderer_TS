@@ -421,6 +421,8 @@ export function RenderFrame(
 			const coordinateSystemLinesToRender : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[] = GetLinesToRender(context, coordinateSystemInCameraSpace, camera);
 			const meshLinesToRender             : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[] = GetLinesToRender(context, meshInCameraSpace            , camera);
 			
+			console.log(coordinateSystemLinesToRender)
+
 			if (background)
 				RenderCanvasBackground (imagedata.data, context, background);
 
