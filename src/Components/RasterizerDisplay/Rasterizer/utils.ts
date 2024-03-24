@@ -114,6 +114,8 @@ export function CenterDisplayOrigin(
 	displayHeight : number,
 ):Coord.Types.T_Coord3D
 {
+	console.log({...coord});
+
 	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
 };
 */
@@ -124,7 +126,8 @@ function CenterDisplayOrigin(
 	displayHeight : number,
 ) : void
 {
-	console.log("CenterDisplayOrigin input : ", [...vertex]);
+	//console.log(`Math.floor(${vertex[0]}  + ${displayWidth}  * .5) = ${Math.floor(vertex[0]  + displayWidth  * .5)}`);
+	//console.log(`Math.floor(${-vertex[1]} + ${displayHeight} * .5) = ${Math.floor(-vertex[1] + displayHeight * .5)}`);
 
 	vertex[0] = Math.floor(vertex[0]  + displayWidth  * .5);
 	vertex[1] = Math.floor(-vertex[1] + displayHeight * .5);
