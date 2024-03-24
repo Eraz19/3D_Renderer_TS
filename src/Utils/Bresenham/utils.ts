@@ -58,6 +58,7 @@ function HorizontalDiagonalPoints(
 	vertex1X : number,
 	vertex1Y : number,
 	vertex2X : number,
+	vertex2Y : number,
 	deltaX   : number,
 	deltaY   : number,
 ): Vector.Types.T_Vec2D[]
@@ -75,6 +76,7 @@ function HorizontalDiagonalPoints(
 	{
 		startVertexX = vertex2X;
 		endVertexX   = vertex1X;
+		pixelY       = vertex2Y;
 	}
 
 	for (let pixelX : number = startVertexX; pixelX <= endVertexX; ++pixelX)
@@ -95,6 +97,7 @@ function HorizontalDiagonalPoints(
 function VerticalDiagonalPoints(
 	vertex1X : number,
 	vertex1Y : number,
+	vertex2X : number,
 	vertex2Y : number,
 	deltaX   : number,
 	deltaY   : number,
@@ -113,6 +116,7 @@ function VerticalDiagonalPoints(
 	{
 		startVertexY = vertex2Y;
 		endVertexY   = vertex1Y;
+		pixelX       = vertex2X;
 	}
 
 	for (let pixelY : number = startVertexY; pixelY <= endVertexY; ++pixelY)
@@ -142,6 +146,6 @@ export function BresenhamLinePoints(
 
 	if      (deltaX === 0)                         return (VerticalLinePoints      (vertex1X, vertex1Y, vertex2X, vertex2Y                ));
 	else if (deltaY === 0)                         return (HorizontalLinePoints    (vertex1X, vertex1Y, vertex2X, vertex2Y                ));
-	else if (Math.abs(deltaX) >= Math.abs(deltaY)) return (HorizontalDiagonalPoints(vertex1X, vertex1Y, vertex2X,           deltaX, deltaY));
-	else                                           return (VerticalDiagonalPoints  (vertex1X, vertex1Y,           vertex2Y, deltaX, deltaY));
+	else if (Math.abs(deltaX) >= Math.abs(deltaY)) return (HorizontalDiagonalPoints(vertex1X, vertex1Y, vertex2X, vertex2Y, deltaX, deltaY));
+	else                                           return (VerticalDiagonalPoints  (vertex1X, vertex1Y, vertex2X, vertex2Y, deltaX, deltaY));
 };

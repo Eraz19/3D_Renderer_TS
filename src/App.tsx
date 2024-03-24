@@ -119,8 +119,8 @@ function App() : JSX.Element
 								polarCoord :
 								{
 									radius: 1.5,
-									theta : 33.69999999999999,
-									phi   : 24.7,
+									theta : 25,
+									phi   : 22,
 								},
 							}
 						}

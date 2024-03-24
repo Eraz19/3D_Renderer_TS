@@ -9,18 +9,23 @@ function FromLineFace_ToEdges(str : string): Types.T_Edges
 	{
 		const splitStr : string[] = str.split('/');
 
-		if (splitStr.length >= 1) return (Number(splitStr[0]));
+		if (splitStr.length >= 1) return (Number(splitStr[0]) - 1);
 		else                      return (NaN);
 	};
 
 	function FromVerticesIndex_ToEdges(verticesList : number[]) : Types.T_Edges
 	{
+		function SortVerticesIndex(value1 : number, value2 : number) : number
+		{
+			return ((value1 > value2) ? 1 : -1);
+		};
+
 		let result : Types.T_Edges = [];
 
 		for (let i : number = 0; i < verticesList.length; ++i)
 		{
-			if (i < verticesList.length - 1) result = [...result, [verticesList[i],verticesList[i + 1]]];
-			else                             result = [...result, [verticesList[i],verticesList[0]    ]];
+			if (i < verticesList.length - 1) result = [...result, [verticesList[i],verticesList[i + 1]].sort(SortVerticesIndex) as [number, number]];
+			else                             result = [...result, [verticesList[i],verticesList[0]    ].sort(SortVerticesIndex) as [number, number]];
 		}
 
 		return (result);
@@ -50,24 +55,30 @@ export function ParseOBJFile(fileContent : string) : Types.T_OBJParsingResult
 		return ([...prev, ...current]);
 	};
 	
-	function RemoveAllDuplicatesEdges(
-		edge     : Types.T_Edge,
-		index    : number,
-		allEdges : Types.T_Edges,
-	) : boolean
+	function SortEdges(edge1 : Types.T_Edge, edge2 : Types.T_Edge) : number
 	{
-		const originalEdge                : Types.T_Edge = edge;
-		const reverseEdge                 : Types.T_Edge = [edge[1],edge[0]];
-		const edgeMatchingIndexInAllEdges : number       = allEdges.findIndex((edgeInList : Types.T_Edge) : boolean =>
-			{
-				return (
-					(JSON.stringify(edgeInList) === JSON.stringify(originalEdge)) ||
-					(JSON.stringify(edgeInList) === JSON.stringify(reverseEdge))  &&
-					edgeInList !== edge
-				);
-			});
+		return ((edge1[0] > edge2[0]) ? 1 : -1);
+	};
 
-		return (index === edgeMatchingIndexInAllEdges);
+	function RemoveAllDuplicatesEdges(edges : Types.T_Edges) : Types.T_Edges
+	{
+		if (edges.length !== 0)
+		{
+			let result : Types.T_Edges = [edges[0]];
+
+			for (let i : number = 1; i < edges.length; ++i)
+			{
+				const lastEdgeIndex1 : number = result[result.length - 1][0];
+				const lastEdgeIndex2 : number = result[result.length - 1][1];
+
+				if (edges[i][0] !== lastEdgeIndex1 || edges[i][1] !== lastEdgeIndex2)
+					result = [...result, edges[i]];
+			}
+
+			return (result);
+		}
+		else
+			return (edges);
 	};
 
 	function IsLineVertexCoord(line : string): boolean { return (line.startsWith("v ")); };
@@ -87,10 +98,10 @@ export function ParseOBJFile(fileContent : string) : Types.T_OBJParsingResult
 	return (
 		{
 			vertices: verticesStringList.map(FromStringOBJ_ToPoint),
-			edges   : faceStringList
+			edges   : RemoveAllDuplicatesEdges(faceStringList
 				.map(FromLineFace_ToEdges)
 				.reduce(CollectAllEdgesArraysInOneArray, [])
-				.filter(RemoveAllDuplicatesEdges)
+				.sort(SortEdges))
 		}
 	);
 };
