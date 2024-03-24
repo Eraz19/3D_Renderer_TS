@@ -124,6 +124,9 @@ function CenterDisplayOrigin(
 	displayHeight : number,
 ) : void
 {
+	console.log(displayWidth);
+	console.log(displayHeight);
+
 	vertex[0] = Math.floor(vertex[0]  + displayWidth  * .5);
 	vertex[1] = Math.floor(-vertex[1] + displayHeight * .5);
 };
