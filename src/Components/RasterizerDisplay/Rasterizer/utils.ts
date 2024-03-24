@@ -63,12 +63,12 @@ function EdgesPrinting(edges : Types.T_ModelMesh_Edges<Types.T_ModelMesh_Vertex>
 {
 	return (
 		edges
-		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string => { return (`			[${Vector3(edge.edge[0])},${Vector3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`); })
+		.map((edge : Types.T_ModelMesh_Edge<Types.T_ModelMesh_Vertex>) : string => { return (`			[${VectorPrinting3(edge.edge[0])},${VectorPrinting3(edge.edge[1])}] => ${ColorPrinting(edge.color)}`); })
 		.reduce((prev : string, current : string) : string => { return (`${prev}\n${current}`) }, "")
 	);	
 };
 
-function Vector3(vector : Vector.Types.T_Vec3D) : string
+function VectorPrinting3(vector : Vector.Types.T_Vec3D) : string
 {
 	return (`[${vector[0]},${vector[1]},${vector[2]}]`);
 };
@@ -141,22 +141,25 @@ function FromWorldSpace_ToDisplaySpace(
 	displayHeight            : number,
 ): Vector.Types.T_Vec3D[]
 {
+	debug += "\n";
+
 	return (
-		vertices.map((vertex : Types.T_ModelMesh_Vertex): Types.T_ModelMesh_Vertex =>
+		vertices.map((vertex : Types.T_ModelMesh_Vertex, index : number): Types.T_ModelMesh_Vertex =>
 		{
 			let result : Types.T_ModelMesh_Vertex = [...vertex];
 
 			FromWorldSpace_ToCameraSpace  (result, scalingAndRotationMatrix, translationVector);
 
-			//console.log("coordinateSystemInCameraSpace: ", [...result]);
+			debug += `Vertex${index} FromWorldSpace_ToCameraSpace  : ${VectorPrinting3([...result])}\n`;
 
 			FromCameraSpace_ToDisplaySpace(result, cameraRadius                               );
 
-			//console.log("coordinateSystemInDisplaySpace: ", [...result]);
+			debug += `Vertex${index} FromCameraSpace_ToDisplaySpace: ${VectorPrinting3([...result])}\n`;
 
 			CenterDisplayOrigin           (result, displayWidth            , displayHeight    );
 
-			//console.log("coordinateSystemInDisplaySpace_Centered: ", [...result]);
+			debug += `Vertex${index} CenterDisplayOrigin           : ${VectorPrinting3([...result])}\n`;
+			debug += "\n\n";
 
 			return (result);
 		})
@@ -471,7 +474,7 @@ export function RenderFrame(
 			const translationVector        : Vector.Types.T_Vec3D      = ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix);
 
 			debug += "translationVector: \n\n\t\t\t";
-			debug += Vector3(translationVector);
+			debug += VectorPrinting3(translationVector);
 			debug += "\n";
 			debug += "\n";
 		
