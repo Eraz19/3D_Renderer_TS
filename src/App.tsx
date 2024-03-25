@@ -86,7 +86,7 @@ function App() : JSX.Element
 							{
 								enabled  : !isRasterizerActionsLocked,
 								maxRadius: 5,
-								minRadius: 1,
+								minRadius: 0.5,
 							}
 						}
 						dragSettings     =

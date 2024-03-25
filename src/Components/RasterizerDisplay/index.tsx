@@ -17,7 +17,7 @@ const DEFAULT_ZOOM_FACTOR   : number = 0.1;
 
 const RASTERIZER_BACKGROUND_COLOR : Color.RGB.Types.T_Color = { red: 92, green: 92, blue: 92 };
 
-const NUMBER_OF_FRAME_PER_SECOND : number = 60;
+const NUMBER_OF_FRAME_PER_SECOND : number = 30;
 
 export const RasterizerContext = React.createContext<UIRasterizer.Types.T_RasterizerContext>({});
 
@@ -36,8 +36,10 @@ export function Component(props : Types.T_Props) : JSX.Element
 	React.useEffect(() => { event.current.zoomEnabled          = props.zoomSettings  ?.enabled ?? true;           }, [props.zoomSettings    ?.enabled    ]);
     React.useEffect(() => { event.current.zoomEnabled          = props.zoomSettings  ?.enabled ?? true;           }, [props.zoomSettings    ?.enabled    ]);
     React.useEffect(() =>
-    {
-        context.current.modelMesh = props.mesh; }, [props.mesh]);
+    {        
+        context.current.modelMesh    = { edges: props.mesh.edges, vertices : ResizeMeshVerticesToFitCoordinateSystem(props.mesh.vertices) };
+        context.current.meshToRender = UIRasterizer.Utils.MergeMeshes([context.current.coordinateSystemBases, context.current.modelMesh]); 
+    }, [props.mesh]);
 
     React.useEffect(() =>
 	{
@@ -60,14 +62,39 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     /**************************** Utils ****************************/
 
+    function ResizeMeshVerticesToFitCoordinateSystem(meshVertices : UIRasterizer.Types.T_ModelMesh_Vertices) : UIRasterizer.Types.T_ModelMesh_Vertices
+    {
+        if (context.current.coordinateSystemBasesSize)
+        {
+            let factor : number = 1;
+
+            const coordinateSystemBasesSize : number = context.current.coordinateSystemBasesSize;
+            const maxVerticesX : number = Math.max(...meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[0])); }));
+            const maxVerticesY : number = Math.max(...meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[1])); }));
+            const maxVerticesZ : number = Math.max(...meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[2])); }));
+            const maxValue     : number = Math.max(...[maxVerticesX, maxVerticesY, maxVerticesZ]);
+    
+            if       (maxValue > coordinateSystemBasesSize) factor = 1 / (maxValue / coordinateSystemBasesSize);
+            else if  (maxValue < coordinateSystemBasesSize) factor = coordinateSystemBasesSize / maxValue;
+    
+            return (
+                meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : UIRasterizer.Types.T_ModelMesh_Vertex =>
+                {
+                    return ([vertex[0] * factor,vertex[2] * factor,vertex[1] * factor]);
+                })
+            );
+        }
+        else
+            return ([]);
+    };
+
     function InitializeContext() : UIRasterizer.Types.T_RasterizerContext
     {
         return (
             {
-                camera               : InitializeCamera(),
-                coordinateSystemBases: UIRasterizer.Variables.coordinateSystemBases3D,
-                background           : RASTERIZER_BACKGROUND_COLOR,
-                renderLoop           : InitalizeRenderLoop(),   
+                camera    : InitializeCamera(),
+                background: RASTERIZER_BACKGROUND_COLOR,
+                renderLoop: InitalizeRenderLoop(),   
             }
         );
     };

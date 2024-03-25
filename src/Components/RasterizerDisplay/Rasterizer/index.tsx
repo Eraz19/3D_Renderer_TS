@@ -13,6 +13,20 @@ import      Style from "./style.module.scss";
 
 export function Component() : JSX.Element
 {
+	React.useEffect(() =>
+	{
+		const coordinateSystemSizeRelativeToCanvasHeight : number = 0.3;
+
+		if (context.canvasRef && context.camera)
+		{
+			context.coordinateSystemBases      = Utils.GenerateCoordinateBases3D(context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight);
+			context.meshToRender               = Utils.MergeMeshes([context.coordinateSystemBases, context.modelMesh]); 
+			context.coordinateSystemBasesSize  = context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight;
+			context.camera.anchor.z            = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
+			context.camera.initialAnchor.z     = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
+		}
+	}, []);
+
 	const sleepTimeout     = React.useRef<NodeJS.Timeout>();
 	const fpsDebugInterval = React.useRef<NodeJS.Timer>();
 
@@ -116,7 +130,7 @@ export function Component() : JSX.Element
 					}
 					
 					if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
-						Utils.RenderFrame(context.canvasRef, context.camera, context.coordinateSystemBases, context.modelMesh, context.background);
+						Utils.RenderFrame(context.canvasRef, context.camera, context.meshToRender, context.background);
 				}
 
 				context.renderLoop.renderEnd = new Date();
@@ -136,8 +150,10 @@ export function Component() : JSX.Element
 
 	function HandleResize() : void
 	{
-		if (context.canvasRef)
+		if (context.canvasRef && context.camera)
+		{
 			context.canvasSize = { width: context.canvasRef.clientWidth, height: context.canvasRef.clientHeight };
+		}
 	};
 
 	return (
@@ -150,4 +166,3 @@ export function Component() : JSX.Element
 
 export * as Utils     from "./utils";
 export * as Types     from "./types";
-export * as Variables from "./variables";

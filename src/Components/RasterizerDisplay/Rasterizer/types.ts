@@ -5,7 +5,6 @@ import * as PolarCamera from "../../../Utils/Rasterizer/PolarCamera";
 import * as Coord       from "../../../Utils/Coord";
 import * as Matrix      from "../../../Utils/Matrix";
 import * as Vector      from "../../../Utils/Vector";
-import * as ParserOBJ   from "../../../Utils/Parser/OBJ";
 import * as Color       from "../../../Utils/Color";
 
 
@@ -47,7 +46,7 @@ export type T_Edge<T>            = Primitive.Tuple.Types.T_Tuple<T,2>;
 export type T_ModelMesh_Vertices = T_ModelMesh_Vertex[];
 export type T_ModelMesh_Vertex   = Vector.Types.T_Vec3D;
 
-export type T_ModelMesh_Edges<T> = T_ModelMesh_Edge<T>[];
+export type T_ModelMesh_Edges<T> = (T_ModelMesh_Edge<T> | null)[];
 export type T_ModelMesh_Edge<T>  =
 {
 	edge  : T_Edge<T>;
@@ -80,13 +79,15 @@ export type T_RenderLoopState =
 
 export type T_RasterizerContext =
 {
-	modelMesh             ?: T_ModelMesh<number>;
-	coordinateSystemBases ?: T_CoordinateBases3D;
-    canvasRef             ?: HTMLCanvasElement;
-	canvasSize            ?: T_CanvasSize;
-    camera                ?: T_CameraState;
-	background            ?: Color.RGB.Types.T_Color;
-	renderLoop            ?: T_RenderLoopState;
+	meshToRender              ?: T_ModelMesh<number>;
+	modelMesh                 ?: T_ModelMesh<number>;
+	coordinateSystemBases     ?: T_CoordinateBases3D;
+	coordinateSystemBasesSize ?: number;
+    canvasRef                 ?: HTMLCanvasElement;
+	canvasSize                ?: T_CanvasSize;
+    camera                    ?: T_CameraState;
+	background                ?: Color.RGB.Types.T_Color;
+	renderLoop                ?: T_RenderLoopState;
 };
 
 
