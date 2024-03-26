@@ -1,6 +1,7 @@
-import React from "react";
+import * as React from "react";
+import * as ErazLib from "eraz-lib/dist";
 
-import * as ParserOBJ from "../../Utils/Parser/OBJ";
+
 import * as Types     from "./types";
 import      Style     from "./styles.module.scss";
 
@@ -18,7 +19,7 @@ export const Component = (props:Types.T_Props) =>
 			const fileContent:string|ArrayBuffer|null = fileReader.result;
 	
 			if (typeof fileContent === "string")
-				props.getMeshModel(ParserOBJ.ParseOBJFile(fileContent));
+				props.getMeshModel(ErazLib.Parser.OBJ.ParseOBJFile(fileContent));
 		};
 
 		const fileReader:FileReader = new FileReader();

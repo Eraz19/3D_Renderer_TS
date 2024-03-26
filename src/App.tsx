@@ -1,20 +1,17 @@
-import React from "react";
+import * as React   from "react";
+import * as ErazLib from "eraz-lib/dist";
 
 
-import * as ParserOBJ          from "./Utils/Parser/OBJ";
-import * as PolarCamera        from "./Utils/Rasterizer/PolarCamera";
 import * as Window             from "./Components/Window";
 import * as TilinWindowManager from "./Components/TilingWindowManager";
 import * as RasterizerDisplay  from "./Components/RasterizerDisplay";
 import * as SearchReadFile     from "./Components/SearchReadFile";
-import * as Debug              from "./Components/Debug";
 import      Style              from "./style.module.scss";
 
 
 function App() : JSX.Element
 {
-	const [mesh      , setMesh      ] = React.useState<ParserOBJ.Types.T_OBJParsingResult>({ vertices: [], edges: [] });
-	//const [debugPanel, setDebugPanel] = React.useState<RasterizerDisplay.Types.T_CameraState>();
+	const [mesh, setMesh] = React.useState<ErazLib.Parser.OBJ.Types.T_OBJParsingResult>({ vertices: [], edges: [] });
 
 	const [isWindowActionsLocked    , setIsWindowActionsLocked    ] = React.useState<boolean>(false);
 	const [isRasterizerActionsLocked, setIsRasterizerActionsLocked] = React.useState<boolean>(false);
@@ -23,8 +20,8 @@ function App() : JSX.Element
 		<>
 			
 			<SearchReadFile.Component
-				getMeshModel ={setMesh}
-				fileExtension={"obj"}
+				getMeshModel  = {setMesh}
+				fileExtension = {"obj"}
 			/>
 			{
 				<Window.Component
@@ -66,7 +63,7 @@ function App() : JSX.Element
 						{
 							{
 								vertices: mesh.vertices,
-								edges   : mesh.edges.map((edge : ParserOBJ.Types.T_Edge) =>
+								edges   : mesh.edges.map((edge : ErazLib.Parser.OBJ.Types.T_Edge) =>
 								{
 									return (
 										{
@@ -110,18 +107,8 @@ function App() : JSX.Element
 						defaultCamera    =
 						{
 							{
-								anchor     :
-								{
-									x: -2.805107074079211,
-									y: 6.4164063745393625,
-									z: 0.4229436339504366,
-								},
-								polarCoord :
-								{
-									radius: 1.5,
-									theta : 25,
-									phi   : 22,
-								},
+								anchor     : [0 ,0 ,0  ],
+								polarCoord : [22,25,1.5]
 							}
 						}
 					/>

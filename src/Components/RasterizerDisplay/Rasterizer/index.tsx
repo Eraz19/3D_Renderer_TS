@@ -1,8 +1,6 @@
-import React from "react";
+import * as React   from "react";
+import * as ErazLib from "eraz-lib/dist";
 
-
-import * as PolarCamera from "../../../Utils/Rasterizer/PolarCamera";
-import * as Coord       from "../../../Utils/Coord";
 
 import * as RasterizerDisplay from "../index";
 
@@ -19,11 +17,11 @@ export function Component() : JSX.Element
 
 		if (context.canvasRef && context.camera)
 		{
-			context.coordinateSystemBases      = Utils.GenerateCoordinateBases3D(context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight);
-			context.meshToRender               = Utils.MergeMeshes([context.coordinateSystemBases, context.modelMesh]); 
-			context.coordinateSystemBasesSize  = context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight;
-			context.camera.anchor.z            = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
-			context.camera.initialAnchor.z     = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
+			context.coordinateSystemBases     = Utils.GenerateCoordinateBases3D(context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight);
+			context.meshToRender              = Utils.MergeMeshes([context.coordinateSystemBases, context.modelMesh]); 
+			context.coordinateSystemBasesSize = context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight;
+			context.camera.anchor[2]          = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
+			context.camera.initialAnchor[2]   = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
 		}
 	}, []);
 
@@ -65,14 +63,14 @@ export function Component() : JSX.Element
 		};
 
 		function IsCameraSame(
-			prevCamera ?: PolarCamera.Types.T_PolarCamera,
-			newCamera  ?: PolarCamera.Types.T_PolarCamera,
+			prevCamera ?: Types.T_PolarCamera,
+			newCamera  ?: Types.T_PolarCamera,
 		) : boolean
 		{
 			if (prevCamera && newCamera)
 			{
-				const cameraAnchorIsSame     : boolean = Coord      .Utils.IsEqual(prevCamera.anchor    , newCamera.anchor    );
-				const cameraPolarCoordIsSame : boolean = PolarCamera.Utils.IsEqual(prevCamera.polarCoord, newCamera.polarCoord);
+				const cameraAnchorIsSame     : boolean = ErazLib.Graphic.Vector.Utils.IsEqual(prevCamera.anchor    , newCamera.anchor    );
+				const cameraPolarCoordIsSame : boolean = ErazLib.Graphic.Vector.Utils.IsEqual(prevCamera.polarCoord, newCamera.polarCoord);
 		
 				return (cameraAnchorIsSame && cameraPolarCoordIsSame);
 			}
@@ -121,7 +119,7 @@ export function Component() : JSX.Element
 					const isRerenderingBecauseOfCanvasSizeUpdate : boolean = !IsCanvasSizeSame(context.renderLoop?.canvasSizeSnapShot, { ...context.canvasSize });
 					const isRerenderingBecauseOfMeshUpdate       : boolean = !IsMeshSame      (context.renderLoop?.meshSnapShot      , context.modelMesh        );
 
-					if (isRerenderingBecauseOfCameraUpdate) context.renderLoop.cameraSnapShot =	PolarCamera.Utils.DeepCopy(context.camera);
+					if (isRerenderingBecauseOfCameraUpdate) context.renderLoop.cameraSnapShot =	Utils.PolarCameraDeepCopy(context.camera);
 					if (isRerenderingBecauseOfMeshUpdate  ) context.renderLoop.meshSnapShot   =	context.modelMesh;
 					if (isRerenderingBecauseOfCanvasSizeUpdate)
 					{
@@ -143,7 +141,7 @@ export function Component() : JSX.Element
 		}
 	};
 
-	function BindCanvasInContext(ref : HTMLCanvasElement | null)
+	function BindCanvasInContext(ref : HTMLCanvasElement | null) : void
 	{
 		context.canvasRef = ref ?? undefined;
 	};

@@ -1,8 +1,8 @@
-import * as ParserOBJ from "../../Utils/Parser/OBJ";
+import * as ErazLib from "eraz-lib/dist";
 
 
 export type T_Props =
 {
 	fileExtension : "obj";
-	getMeshModel  : (modelMesh:ParserOBJ.Types.T_OBJParsingResult) => void;
+	getMeshModel  : (modelMesh : ErazLib.Parser.OBJ.Types.T_OBJParsingResult) => void;
 };

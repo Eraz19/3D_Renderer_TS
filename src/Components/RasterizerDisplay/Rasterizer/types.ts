@@ -1,11 +1,4 @@
-import * as Primitive from "eraz-lib/build/Primitive";
-
-
-import * as PolarCamera from "../../../Utils/Rasterizer/PolarCamera";
-import * as Coord       from "../../../Utils/Coord";
-import * as Matrix      from "../../../Utils/Matrix";
-import * as Vector      from "../../../Utils/Vector";
-import * as Color       from "../../../Utils/Color";
+import * as ErazLib from "eraz-lib/dist";
 
 
 export enum E_CanvasAreas
@@ -24,16 +17,28 @@ export enum E_CanvasAreas
 
 export type T_Second = number;
 
-export type T_CameraState = PolarCamera.Types.T_PolarCamera &
+
+export type T_PhiAngle         = number;
+export type T_ThetaAngle       = number;
+export type T_Raduis           = number;
+export type T_PolarCoordSystem = [T_PhiAngle,T_ThetaAngle,T_Raduis];
+export type T_PolarCamera      =
 {
-	initialAnchor         : Coord.Types.T_Coord3D;
-	initialCamera         : PolarCamera.Types.T_PolarCoordSystem;
-	cameraToWorldMatrix  ?: Matrix.Types.T_Matrix_4_4;
-	worldToCameraMatrix  ?: Matrix.Types.T_Matrix_4_4;
-	cameraToAnchorVector ?: Vector.Types.T_Vec3D;
-	cameraToTopVector    ?: Vector.Types.T_Vec3D;
-	cameraToSideVector   ?: Vector.Types.T_Vec3D;
+	anchor     : ErazLib.Graphic.Vector.Types.T_Vec3D;
+	polarCoord : T_PolarCoordSystem;
 };
+
+export type T_CameraState = T_PolarCamera &
+{
+	initialAnchor         : ErazLib.Graphic.Vector.Types.T_Vec3D;
+	initialCamera         : T_PolarCoordSystem;
+	cameraToWorldMatrix  ?: ErazLib.Graphic.Matrix.Types.T_Matrix_4_4;
+	worldToCameraMatrix  ?: ErazLib.Graphic.Matrix.Types.T_Matrix_4_4;
+	cameraToAnchorVector ?: ErazLib.Graphic.Vector.Types.T_Vec3D;
+	cameraToTopVector    ?: ErazLib.Graphic.Vector.Types.T_Vec3D;
+	cameraToSideVector   ?: ErazLib.Graphic.Vector.Types.T_Vec3D;
+};
+
 
 export type T_CanvasSize =
 {
@@ -42,25 +47,27 @@ export type T_CanvasSize =
 };
 
 
-export type T_Edge<T>            = Primitive.Tuple.Types.T_Tuple<T,2>;
 export type T_ModelMesh_Vertices = T_ModelMesh_Vertex[];
-export type T_ModelMesh_Vertex   = Vector.Types.T_Vec3D;
+export type T_ModelMesh_Vertex   = ErazLib.Graphic.Vector.Types.T_Vec3D;
 
+export type T_Edge<T>            = ErazLib.Primitive.Tuple.Types.T_Tuple<T,2>;
 export type T_ModelMesh_Edges<T> = (T_ModelMesh_Edge<T> | null)[];
 export type T_ModelMesh_Edge<T>  =
 {
 	edge  : T_Edge<T>;
-	color : Color.RGB.Types.T_Color;
+	color : ErazLib.Graphic.Color.RGB.Types.T_Color;
 };
+
 export type T_ModelMesh<T> = 
 {
 	vertices : T_ModelMesh_Vertex[];
     edges    : T_ModelMesh_Edges<T>;
 };
 
-export type T_CoordinateBases3D_Vertices = Primitive.Tuple.Types.T_Tuple<T_ModelMesh_Vertex,4>;
-export type T_CoordinateBases3D_Edges    = Primitive.Tuple.Types.T_Tuple<T_ModelMesh_Edge<number>,3>;
-export type T_CoordinateBases3D = 
+
+export type T_CoordinateBases3D_Vertices = ErazLib.Primitive.Tuple.Types.T_Tuple<T_ModelMesh_Vertex,4>;
+export type T_CoordinateBases3D_Edges    = ErazLib.Primitive.Tuple.Types.T_Tuple<T_ModelMesh_Edge<number>,3>;
+export type T_CoordinateBases3D          = 
 {
 	vertices : T_CoordinateBases3D_Vertices;
     edges    : T_CoordinateBases3D_Edges;
@@ -70,7 +77,7 @@ export type T_RenderLoopState =
 {
 	frameTime           : T_Second;
 	frameCount          : number;
-	cameraSnapShot     ?: PolarCamera.Types.T_PolarCamera;
+	cameraSnapShot     ?: T_PolarCamera;
 	canvasSizeSnapShot ?: T_CanvasSize;
 	meshSnapShot       ?: T_ModelMesh<number>;
 	renderEnd          ?: Date;
@@ -86,9 +93,6 @@ export type T_RasterizerContext =
     canvasRef                 ?: HTMLCanvasElement;
 	canvasSize                ?: T_CanvasSize;
     camera                    ?: T_CameraState;
-	background                ?: Color.RGB.Types.T_Color;
+	background                ?: ErazLib.Graphic.Color.RGB.Types.T_Color;
 	renderLoop                ?: T_RenderLoopState;
 };
-
-
-

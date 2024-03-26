@@ -1,5 +1,3 @@
-import * as PolarCamera from "../../Utils/Rasterizer/PolarCamera";
-
 import * as UIRasterizerTypes from "./Rasterizer/types";
 
 
@@ -87,7 +85,7 @@ export type T_RotateSettings =
 
 export type T_Props =
 {
-	defaultCamera     : PolarCamera.Types.T_PolarCamera;
+	defaultCamera     : UIRasterizerTypes.T_PolarCamera;
 	mesh              : UIRasterizerTypes.T_ModelMesh<number>;
 	dragSettings     ?: T_DragSettings;
 	rotateSettings   ?: T_RotateSettings;

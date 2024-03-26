@@ -1,8 +1,6 @@
-import * as React from "react";
+import * as React   from "react";
+import * as ErazLib from "eraz-lib/dist";
 
-
-import * as PolarCamera from "../../Utils/Rasterizer/PolarCamera";
-import * as Color       from "../../Utils/Color";
 
 import * as UIRasterizer from "./Rasterizer";
 import * as Overlay      from "./Overlay";
@@ -15,7 +13,7 @@ const DEFAULT_DRAG_FACTOR   : number = 0.7;
 const DEFAULT_ROTATE_FACTOR : number = 0.3;
 const DEFAULT_ZOOM_FACTOR   : number = 0.1;
 
-const RASTERIZER_BACKGROUND_COLOR : Color.RGB.Types.T_Color = { red: 92, green: 92, blue: 92 };
+const RASTERIZER_BACKGROUND_COLOR : ErazLib.Graphic.Color.RGB.Types.T_Color = { red: 92, green: 92, blue: 92 };
 
 const NUMBER_OF_FRAME_PER_SECOND : number = 30;
 
@@ -140,7 +138,7 @@ export function Component(props : Types.T_Props) : JSX.Element
     {
         return (
             {
-                ...PolarCamera.Utils.DeepCopy(props.defaultCamera),
+                ...UIRasterizer.Utils.PolarCameraDeepCopy(props.defaultCamera),
                 initialAnchor: {...props.defaultCamera.anchor},
                 initialCamera: {...props.defaultCamera.polarCoord},
             }
@@ -344,7 +342,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 		{
 			OnDragStart();
 
-			const dragFactor : number = (props.dragSettings?.dragFactor ?? DEFAULT_DRAG_FACTOR) * (1 / (context.current.camera?.polarCoord.radius ?? 1));
+			const dragFactor : number = (props.dragSettings?.dragFactor ?? DEFAULT_DRAG_FACTOR) * (1 / (context.current.camera?.polarCoord[2] ?? 1));
 			const deltaX     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor *  mouseMoveX : dragFactor * -mouseMoveX;
 			const deltaY     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor * -mouseMoveY : dragFactor *  mouseMoveY;
 
@@ -369,7 +367,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 				if
 				(
 					props.zoomSettings.minRadius < 0 ||
-					props.zoomSettings.minRadius > props.defaultCamera.polarCoord.radius ||
+					props.zoomSettings.minRadius > props.defaultCamera.polarCoord[2] ||
 					(props.zoomSettings.maxRadius && props.zoomSettings.minRadius > props.zoomSettings.maxRadius)
 				)
 					return (undefined);
@@ -383,7 +381,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 			if (props.zoomSettings?.maxRadius == null) return (undefined);
 			else
 			{
-				if (props.zoomSettings.maxRadius < props.defaultCamera.polarCoord.radius)
+				if (props.zoomSettings.maxRadius < props.defaultCamera.polarCoord[2])
 					return (undefined);
 				else
 					return (props.zoomSettings.maxRadius);
