@@ -1,5 +1,5 @@
 import * as React   from "react";
-import * as ErazLib from "eraz-lib/dist";
+import * as ErazLib from "eraz-lib";
 
 
 import * as RasterizerDisplay from "../index";

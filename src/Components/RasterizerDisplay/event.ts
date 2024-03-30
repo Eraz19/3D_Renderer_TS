@@ -1,16 +1,16 @@
 import * as React   from "react";
-import * as ErazLib from "eraz-lib/dist";
+import * as ErazLib from "eraz-lib";
 
 
-import * as UIRasterizerTypes from "./Rasterizer/types";
+import * as Rasterizer from "./Rasterizer";
 
 
 export function ZoomCamera(
 	zoomFactor       : number,
-	camera           : UIRasterizerTypes.T_CameraState,
+	camera           : Rasterizer.Types.T_CameraState,
 	minZoom          : number = 0,
 	maxZoom         ?: number,
-	setCameraDebug  ?: React.Dispatch<React.SetStateAction<UIRasterizerTypes.T_CameraState | undefined>>,
+	setCameraDebug  ?: React.Dispatch<React.SetStateAction<Rasterizer.Types.T_CameraState | undefined>>,
 ) : boolean
 {
 	const newRadius : number = camera.polarCoord[2] + zoomFactor;
@@ -21,7 +21,7 @@ export function ZoomCamera(
 		
 		if (setCameraDebug)
 		{
-			setCameraDebug((prev : UIRasterizerTypes.T_CameraState | undefined) : UIRasterizerTypes.T_CameraState | undefined =>
+			setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
 			{
 				if (prev) return ({...prev, polarCoord: [prev.polarCoord[0],prev.polarCoord[1],newRadius] });
 				else      return (undefined);
@@ -37,8 +37,8 @@ export function ZoomCamera(
 export function RotateCamera(
 	deltaTheta      : number,
 	deltaPhi        : number,
-	camera          : UIRasterizerTypes.T_CameraState,
-	setCameraDebug ?: React.Dispatch<React.SetStateAction<UIRasterizerTypes.T_CameraState | undefined>>,
+	camera          : Rasterizer.Types.T_CameraState,
+	setCameraDebug ?: React.Dispatch<React.SetStateAction<Rasterizer.Types.T_CameraState | undefined>>,
 ) : boolean
 {
 	function ModifyThetaAngle() : boolean
@@ -49,7 +49,7 @@ export function RotateCamera(
 
 		if (setCameraDebug)
 		{
-			setCameraDebug((prev : UIRasterizerTypes.T_CameraState | undefined) : UIRasterizerTypes.T_CameraState | undefined =>
+			setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
 			{
 				if (prev) return ({...prev, polarCoord: [prev.polarCoord[0],newThetaAngle,prev.polarCoord[2]] });
 				else      return (undefined);
@@ -69,7 +69,7 @@ export function RotateCamera(
 
 			if (setCameraDebug)
 			{
-				setCameraDebug((prev : UIRasterizerTypes.T_CameraState | undefined) : UIRasterizerTypes.T_CameraState | undefined =>
+				setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
 				{
 					if (prev) return ({...prev, polarCoord: [newPhiAngle,prev.polarCoord[1],prev.polarCoord[2]] });
 					else      return (undefined);
@@ -96,8 +96,8 @@ export function RotateCamera(
 export function DragCamera(
 	deltaX          : number,
 	deltaY          : number,
-	camera          : UIRasterizerTypes.T_CameraState,
-	setCameraDebug ?: React.Dispatch<React.SetStateAction<UIRasterizerTypes.T_CameraState | undefined>>,
+	camera          : Rasterizer.Types.T_CameraState,
+	setCameraDebug ?: React.Dispatch<React.SetStateAction<Rasterizer.Types.T_CameraState | undefined>>,
 ) : void
 {
 	if (camera.cameraToSideVector && camera.cameraToTopVector)
@@ -115,7 +115,7 @@ export function DragCamera(
 
 		if (setCameraDebug)
 		{
-			setCameraDebug((prev : UIRasterizerTypes.T_CameraState | undefined) : UIRasterizerTypes.T_CameraState | undefined =>
+			setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
 			{
 				if (prev) return ({...prev, anchor: addCameraToTopVectorToAnchorCoord });
 				else      return (undefined);

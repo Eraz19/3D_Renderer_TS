@@ -1,9 +1,10 @@
 import * as React from "react";
-import * as ErazLib from "eraz-lib/dist";
+import * as ErazLib from "eraz-lib";
 
 
-import * as Types     from "./types";
-import      Style     from "./styles.module.scss";
+import * as Types from "./types";
+import * as Utils from "./utils";
+import      Style from "./styles.module.scss";
 
 
 export const Component = (props:Types.T_Props) =>
@@ -11,25 +12,6 @@ export const Component = (props:Types.T_Props) =>
 	const ref = React.useRef<HTMLInputElement>(null);
 
 	const [fileName, setFileName] = React.useState<string>("");
-
-	function ReadOBJFile(file:File):void
-	{
-		function ReadContentOnLoad(fileReader:FileReader):void
-		{
-			const fileContent:string|ArrayBuffer|null = fileReader.result;
-	
-			if (typeof fileContent === "string")
-				props.getMeshModel(ErazLib.Parser.OBJ.ParseOBJFile(fileContent));
-		};
-
-		const fileReader:FileReader = new FileReader();
-
-		fileReader.readAsText(file);
-		fileReader.onload = ():void =>
-		{
-			ReadContentOnLoad(fileReader);
-		};	
-	};
 
 	return (
 		<div className={Style.Container}>
@@ -43,7 +25,14 @@ export const Component = (props:Types.T_Props) =>
 					if (e.target.files && e.target.files.length != 0)
 					{
 						setFileName(e.target.files[0].name);
-						ReadOBJFile(e.target.files[0]);
+
+						Utils
+						.ReadOBJFile(e.target.files[0])
+						.then((parsedOBJ : ErazLib.Parser.OBJ.Types.T_OBJParsingResult | undefined) =>
+						{
+							if (parsedOBJ)
+								props.getMeshModel(parsedOBJ);
+						})
 					}
 				}}
 			/>
@@ -63,3 +52,5 @@ export const Component = (props:Types.T_Props) =>
 		</div>
 	);
 };
+
+export * as Utils from "./utils";

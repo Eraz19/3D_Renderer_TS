@@ -6,17 +6,6 @@ import * as Types from "./types";
 
 /********************* Camera *********************/
 
-/*export function FromCartesian_ToPolar(cartesianCoord : ErazLib.Graphic.Vector.Types.T_Vec3D) : Types.T_PolarCoordSystem
-{
-	return (
-		[
-			Math.atan(cartesianCoord[2] / (Math.sqrt(cartesianCoord[0] * cartesianCoord[0] + cartesianCoord[1] * cartesianCoord[1]))),
-			Math.atan(cartesianCoord[1] / cartesianCoord[0]),
-			Math.sqrt(cartesianCoord[0] * cartesianCoord[0] + cartesianCoord[1] * cartesianCoord[1] + cartesianCoord[2] * cartesianCoord[2]),
-		]
-	);
-};*/
-
 function UpdateCamera(
 	camera              : Types.T_CameraState,
 	cameraToWorldMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4,

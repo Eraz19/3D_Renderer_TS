@@ -1,12 +1,12 @@
 import * as React   from "react";
-import * as ErazLib from "eraz-lib/dist";
+import * as ErazLib from "eraz-lib";
 
 
-import * as UIRasterizer from "./Rasterizer";
-import * as Overlay      from "./Overlay";
-import * as Event        from "./event";
-import * as Types        from "./types";
-import      Style        from "./style.module.scss";
+import * as Rasterizer from "./Rasterizer";
+import * as Overlay    from "./Overlay";
+import * as Event      from "./event";
+import * as Types      from "./types";
+import      Style      from "./style.module.scss";
 
 
 const DEFAULT_DRAG_FACTOR   : number = 0.7;
@@ -17,13 +17,14 @@ const RASTERIZER_BACKGROUND_COLOR : ErazLib.Graphic.Color.RGB.Types.T_Color = { 
 
 const NUMBER_OF_FRAME_PER_SECOND : number = 30;
 
-export const RasterizerContext = React.createContext<UIRasterizer.Types.T_RasterizerContext>({});
+export const RasterizerContext = React.createContext<Rasterizer.Types.T_RasterizerContext>({});
+
 
 export function Component(props : Types.T_Props) : JSX.Element
 {
-    const input   = React.useRef<Types.T_Input>                         (InitializeInput  ());
-    const event   = React.useRef<Types.T_Event>                         (IntializeEvent   ());
-    const context = React.useRef<UIRasterizer.Types.T_RasterizerContext>(InitializeContext());
+    const input   = React.useRef<Types.T_Input>                       (InitializeInput  ());
+    const event   = React.useRef<Types.T_Event>                       (IntializeEvent   ());
+    const context = React.useRef<Rasterizer.Types.T_RasterizerContext>(InitializeContext());
 
     const [isMouseDown , setIsMouseDown] = React.useState<boolean>(false);
     const [opentOverlay, setOpenOverlay] = React.useState<boolean>(false);
@@ -36,7 +37,7 @@ export function Component(props : Types.T_Props) : JSX.Element
     React.useEffect(() =>
     {        
         context.current.modelMesh    = { edges: props.mesh.edges, vertices : ResizeMeshVerticesToFitCoordinateSystem(props.mesh.vertices) };
-        context.current.meshToRender = UIRasterizer.Utils.MergeMeshes([context.current.coordinateSystemBases, context.current.modelMesh]); 
+        context.current.meshToRender = Rasterizer.Utils.MergeMeshes([context.current.coordinateSystemBases, context.current.modelMesh]); 
     }, [props.mesh]);
 
     React.useEffect(() =>
@@ -60,23 +61,23 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     /**************************** Utils ****************************/
 
-    function ResizeMeshVerticesToFitCoordinateSystem(meshVertices : UIRasterizer.Types.T_ModelMesh_Vertices) : UIRasterizer.Types.T_ModelMesh_Vertices
+    function ResizeMeshVerticesToFitCoordinateSystem(meshVertices : Rasterizer.Types.T_ModelMesh_Vertices) : Rasterizer.Types.T_ModelMesh_Vertices
     {
         if (context.current.coordinateSystemBasesSize)
         {
             let factor : number = 1;
 
             const coordinateSystemBasesSize : number = context.current.coordinateSystemBasesSize;
-            const maxVerticesX : number = Math.max(...meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[0])); }));
-            const maxVerticesY : number = Math.max(...meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[1])); }));
-            const maxVerticesZ : number = Math.max(...meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[2])); }));
+            const maxVerticesX : number = Math.max(...meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[0])); }));
+            const maxVerticesY : number = Math.max(...meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[1])); }));
+            const maxVerticesZ : number = Math.max(...meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[2])); }));
             const maxValue     : number = Math.max(...[maxVerticesX, maxVerticesY, maxVerticesZ]);
     
             if       (maxValue > coordinateSystemBasesSize) factor = 1 / (maxValue / coordinateSystemBasesSize);
             else if  (maxValue < coordinateSystemBasesSize) factor = coordinateSystemBasesSize / maxValue;
     
             return (
-                meshVertices.map((vertex : UIRasterizer.Types.T_ModelMesh_Vertex) : UIRasterizer.Types.T_ModelMesh_Vertex =>
+                meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : Rasterizer.Types.T_ModelMesh_Vertex =>
                 {
                     return ([vertex[0] * factor,vertex[2] * factor,vertex[1] * factor]);
                 })
@@ -86,7 +87,7 @@ export function Component(props : Types.T_Props) : JSX.Element
             return ([]);
     };
 
-    function InitializeContext() : UIRasterizer.Types.T_RasterizerContext
+    function InitializeContext() : Rasterizer.Types.T_RasterizerContext
     {
         return (
             {
@@ -124,7 +125,7 @@ export function Component(props : Types.T_Props) : JSX.Element
         );
     };
 
-    function InitalizeRenderLoop() : UIRasterizer.Types.T_RenderLoopState
+    function InitalizeRenderLoop() : Rasterizer.Types.T_RenderLoopState
     {
         return (
             {
@@ -134,11 +135,11 @@ export function Component(props : Types.T_Props) : JSX.Element
         );
     };
 
-    function InitializeCamera() : UIRasterizer.Types.T_CameraState
+    function InitializeCamera() : Rasterizer.Types.T_CameraState
     {
         return (
             {
-                ...UIRasterizer.Utils.PolarCameraDeepCopy(props.defaultCamera),
+                ...Rasterizer.Utils.PolarCameraDeepCopy(props.defaultCamera),
                 initialAnchor: {...props.defaultCamera.anchor},
                 initialCamera: {...props.defaultCamera.polarCoord},
             }
@@ -291,7 +292,7 @@ export function Component(props : Types.T_Props) : JSX.Element
         }
 	};
 
-    function HandleMouseDown(e : React.MouseEvent<HTMLDivElement, MouseEvent>) : void
+    function HandleMouseDown() : void
 	{
 		input.current.mouse.status = Types.E_MouseStatus.DOWN;
         setIsMouseDown(true);
@@ -406,7 +407,7 @@ export function Component(props : Types.T_Props) : JSX.Element
                     onMouseMove  = {HandleMouseMove}
                     onWheel      = {HandleWeel}
                 >
-                    <UIRasterizer.Component/>
+                    <Rasterizer.Component/>
                 </div>
                 {
                     opentOverlay &&
@@ -418,3 +419,5 @@ export function Component(props : Types.T_Props) : JSX.Element
         </RasterizerContext.Provider>
     );
 };
+
+export * as Rasterizer from "./Rasterizer";

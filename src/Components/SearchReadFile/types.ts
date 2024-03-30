@@ -1,4 +1,4 @@
-import * as ErazLib from "eraz-lib/dist";
+import * as ErazLib from "eraz-lib";
 
 
 export type T_Props =
