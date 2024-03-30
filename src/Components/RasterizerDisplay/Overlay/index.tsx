@@ -1,3 +1,5 @@
+import * as React from "react";
+
 import * as RasterizerDisplayTypes from "../types";
 
 import * as Types from "./types";

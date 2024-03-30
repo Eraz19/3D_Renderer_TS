@@ -1,6 +1,3 @@
-import * as PolarCamera from "../../Utils/Rasterizer/PolarCamera";
-import * as Polygone    from "../../Utils/Shapes/Polygone";
-
 import * as UIRasterizerTypes from "./Rasterizer/types";
 
 
@@ -61,25 +58,25 @@ export type T_Event =
 
 
 export type T_KeyBindingsSetting = {[P in keyof Omit<T_KeyBindings, "openOverlay" | "dragCamera">]?: string[]};
-export type T_KeyboardSettings   =
+export type T_KeyboardSettings =
 {
     enabled     ?: boolean;
     keybindings ?: T_KeyBindingsSetting;
 };
-export type T_ZoomSetting      =
+export type T_ZoomSetting =
 {
     enabled    ?: boolean;
 	maxRadius  ?: number;
 	minRadius  ?: number;
 	zoomFactor ?: number;
 };
-export type T_DragSettings     =
+export type T_DragSettings =
 {
     enabled    ?: boolean;
 	dragMode   ?: E_CameraMode;
 	dragFactor ?: number;  
 };
-export type T_RotateSettings   =
+export type T_RotateSettings =
 {
     enabled      ?: boolean;
 	rotateMode   ?: E_CameraMode;
@@ -88,8 +85,8 @@ export type T_RotateSettings   =
 
 export type T_Props =
 {
-	defaultCamera     : PolarCamera.Types.T_PolarCamera;
-	mesh              : Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[];
+	defaultCamera     : UIRasterizerTypes.T_PolarCamera;
+	mesh              : UIRasterizerTypes.T_ModelMesh<number>;
 	dragSettings     ?: T_DragSettings;
 	rotateSettings   ?: T_RotateSettings;
 	zoomSettings     ?: T_ZoomSetting;

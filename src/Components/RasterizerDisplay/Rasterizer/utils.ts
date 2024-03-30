@@ -1,161 +1,28 @@
-import * as Polygone   from "../../../Utils/Shapes/Polygone";
-import * as Line       from "../../../Utils/Shapes/Line";
-import * as Rasterizer from "../../../Utils/Rasterizer";
-import * as Matrix     from "../../../Utils/Matrix";
-import * as Coord      from "../../../Utils/Coord";
-import * as Color      from "../../../Utils/Color";
-import * as Vector     from "../../../Utils/Vector";
+import * as ErazLib from "eraz-lib/dist";
+
 
 import * as Types from "./types";
 
-let debug : string = "";
 
-
-
-function CameraDebug(camera : Types.T_CameraState) : string
-{
-	return (
-		`
-			Phi    = ${camera.polarCoord.phi}
-			Theta  = ${camera.polarCoord.theta}
-			Radius = ${camera.polarCoord.radius}
-
-			Anchor = ${CoordPrinting_3(camera.anchor)}
-		`
-	);
-};
-
-function CoordPrinting_3(coord :  Coord.Types.T_Coord3D) : string
-{
-	return (`[${coord.x},${coord.y},${coord.z}]`);
-};
-
-function MatrixPrinting_4(matrix : Matrix.Types.T_Matrix_4_4) : string
-{
-	return (
-		`	
-			[${matrix[0][0]},${matrix[0][1]},${matrix[0][2]},${matrix[0][3]}]
-			[${matrix[1][0]},${matrix[1][1]},${matrix[1][2]},${matrix[1][3]}]
-			[${matrix[2][0]},${matrix[2][1]},${matrix[2][2]},${matrix[2][3]}]
-			[${matrix[3][0]},${matrix[3][1]},${matrix[3][2]},${matrix[3][3]}]
-		`
-	);
-};
-
-function MatrixPrinting_3(matrix : Matrix.Types.T_Matrix_3_3) : string
-{
-	return (
-		`
-			[${matrix[0][0]},${matrix[0][1]},${matrix[0][2]}]
-			[${matrix[1][0]},${matrix[1][1]},${matrix[1][2]}]
-			[${matrix[2][0]},${matrix[2][1]},${matrix[2][2]}]
-		`
-	);
-};
-
-function ColorPrinting(color : Color.RGB.Types.T_Color) : string
-{
-	if      (color.red   === 255) return ("RED");
-	else if (color.green === 255) return ("GREEN");
-	else if (color.blue  === 255) return ("BLUE");
-	else                          return ("BLACK");
-};
-
-function LinesPrintingInCamera(lines : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[], value : string) : string
-{
-	return (
-		`
-Vertex0 ${value}  : ${CoordPrinting_3(lines[0].coord.start)}
-
-Vertex1 ${value}  : ${CoordPrinting_3(lines[0].coord.end)}
-
-Vertex2 ${value}  : ${CoordPrinting_3(lines[1].coord.end)}
-
-Vertex3 ${value}  : ${CoordPrinting_3(lines[2].coord.end)}
-		`
-	);
-};
-
-function VectorPrinting3(vector : Vector.Types.T_Vec3D) : string
-{
-	return (`[${vector[0]},${vector[1]},${vector[2]}]`);
-};
-
-function DebugPrinting() : void
-{
-	console.log(debug);
-};
-
-/***************************************************************/
-
-function FromCoordWorld_ToCoordCamera(
-	cameraMatrix : Matrix.Types.T_Matrix_4_4,
-	coord        : Coord.Types.T_Coord3D,
-) : Coord.Types.T_Coord3D
-{
-	return ({ ...Matrix.Utils.Transformation(cameraMatrix, { ...coord, w: 1 }) });
-};
-
-export function FromCameraSpace_ToDisplaySpace_Coord(
-	coord        : Coord.Types.T_Coord3D,
-	cameraRadius : number,
-): Coord.Types.T_Coord3D
-{
-	return (Matrix.Utils.Transformation([[0,cameraRadius,0],[0,0,cameraRadius],[cameraRadius,0,0]], coord));
-};
-
-export function CenterDisplayOrigin(
-	coord         : Coord.Types.T_Coord3D,
-	displayWidth  : number,
-	displayHeight : number,
-):Coord.Types.T_Coord3D
-{
-	console.log({...coord});
-
-	return ({ x: Math.floor(coord.x + displayWidth * .5), y: Math.floor(-coord.y + displayHeight * .5), z: coord.z });
-};
-
-export function FromWorldSpace_ToCameraSpace(
-	cameraMatrix : Matrix.Types.T_Matrix_4_4,
-	mesh         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[],
-): Line.Types.T_ColoredLine<Line.Types.T_Line3D>[]
-{
-	return (
-		mesh.map((line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>): Line.Types.T_ColoredLine<Line.Types.T_Line3D> =>
-		{
-			return (
-				{
-					color: line.color,
-					coord:
-					{
-						start: FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.start),
-						end  : FromCoordWorld_ToCoordCamera(cameraMatrix, line.coord.end),
-					}
-				}
-			);
-		})
-	);
-};
-
-/***************************************************************/
+/********************* Camera *********************/
 
 function UpdateCamera(
 	camera              : Types.T_CameraState,
-	cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4,
-	worldToCameraMatrix : Matrix.Types.T_Matrix_4_4,
+	cameraToWorldMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4,
+	worldToCameraMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4,
 ) : void
 {
-	function ExtractCameraToAnchorVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+	function ExtractCameraToAnchorVector_FromCameraToWorldMatrix(cameraToWorldMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4) : ErazLib.Graphic.Vector.Types.T_Vec3D
 	{
 		return ([cameraToWorldMatrix[0][0],cameraToWorldMatrix[0][1],cameraToWorldMatrix[0][2]]);
 	};
 	
-	function ExtractCameraToSideVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+	function ExtractCameraToSideVector_FromCameraToWorldMatrix(cameraToWorldMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4) : ErazLib.Graphic.Vector.Types.T_Vec3D
 	{
 		return ([cameraToWorldMatrix[1][0],cameraToWorldMatrix[1][1],cameraToWorldMatrix[1][2]]);
 	};
 	
-	function ExtractCameraToTopVector_FromCameraToWorldMatrix(cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4) : Vector.Types.T_Vec3D
+	function ExtractCameraToTopVector_FromCameraToWorldMatrix(cameraToWorldMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4) : ErazLib.Graphic.Vector.Types.T_Vec3D
 	{
 		return ([cameraToWorldMatrix[2][0],cameraToWorldMatrix[2][1],cameraToWorldMatrix[2][2]]);
 	};
@@ -167,270 +34,478 @@ function UpdateCamera(
 	camera.cameraToTopVector    = ExtractCameraToTopVector_FromCameraToWorldMatrix   (worldToCameraMatrix);
 };
 
-function RemoveLinePartOutsideOfCanvas(
-	line       : Line.Types.T_Line3D,
-	canvasSize : Types.T_CanvasSize,
-) : Line.Types.T_Line3D | null
+export function FromPolar_ToCartesian(polarCoord : Types.T_PolarCoordSystem) : ErazLib.Graphic.Vector.Types.T_Vec3D
 {
-	function IsPointOutOfCanvas(pointCoord : Coord.Types.T_Coord2D) : Types.E_CanvasAreas
-	{
-		function IsPointOutOfCanvas_Top     (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.y < 0                ); };
-		function IsPointOutOfCanvas_Bottom  (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.y > canvasSize.height); };
-		function IsPointOutOfCnavas_Left    (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.x < 0                ); };
-		function IsPointOutOfCnavas_Right   (pointCoord : Coord.Types.T_Coord2D) : boolean { return (pointCoord.x > canvasSize.width ); };
+	function FromDegree_ToRadian(degree : number) : number { return (degree * (Math.PI / 180)); };
 
-		if (IsPointOutOfCnavas_Left(pointCoord))
+	const phiInRadian      : number = FromDegree_ToRadian(polarCoord[0]);
+	const thetaInRadian    : number = FromDegree_ToRadian(polarCoord[1]);
+	const radius           : number = polarCoord[2];
+	const projectionXYNorm : number = radius * Math.cos(phiInRadian);
+
+	return (
+		[
+			projectionXYNorm * Math.cos(thetaInRadian),
+			projectionXYNorm * Math.sin(thetaInRadian),
+			radius           * Math.sin(phiInRadian),
+		]
+	);
+};
+
+export function GenerateCamera_ToWorldMatrix(camera : Types.T_PolarCamera) : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4
+{
+	const vectorFromAnchorToCamera : ErazLib.Graphic.Vector.Types.T_Vec3D = FromPolar_ToCartesian(camera.polarCoord);
+	const cameraToAnchorVector     : ErazLib.Graphic.Vector.Types.T_Vec3D = ErazLib.Graphic.Vector.Utils.Normalize(ErazLib.Graphic.Vector.Utils.Inverse(vectorFromAnchorToCamera));
+	const cameraToSideVector       : ErazLib.Graphic.Vector.Types.T_Vec3D = ErazLib.Graphic.Vector.Utils.Normalize(ErazLib.Graphic.Vector.Utils.CrossProduct(cameraToAnchorVector, [0,0,1]));
+	const cameraToTopVector        : ErazLib.Graphic.Vector.Types.T_Vec3D = ErazLib.Graphic.Vector.Utils.Normalize(ErazLib.Graphic.Vector.Utils.CrossProduct(cameraToSideVector, cameraToAnchorVector));
+	const cameraCoord              : ErazLib.Graphic.Vector.Types.T_Vec3D = ErazLib.Graphic.Vector.Utils.Add(camera.anchor, vectorFromAnchorToCamera);
+
+	return (
+		[
+			[cameraToAnchorVector[0],cameraToSideVector[0],cameraToTopVector[0],cameraCoord[0]],
+			[cameraToAnchorVector[1],cameraToSideVector[1],cameraToTopVector[1],cameraCoord[1]],
+			[cameraToAnchorVector[2],cameraToSideVector[2],cameraToTopVector[2],cameraCoord[2]],
+			[                      0,                    0,                   0,             1],
+		]
+	);
+};
+
+export function PolarCameraDeepCopy(camera : Types.T_PolarCamera) : Types.T_PolarCamera
+{
+	return (
 		{
-			if      (IsPointOutOfCanvas_Top   (pointCoord)) return (Types.E_CanvasAreas.OUT_LEFT_TOP);
-			else if (IsPointOutOfCanvas_Bottom(pointCoord)) return (Types.E_CanvasAreas.OUT_LEFT_BOTTOM);
-			else                                            return (Types.E_CanvasAreas.OUT_LEFT);
+			anchor    : [...camera.anchor],
+    		polarCoord: {...camera.polarCoord},
 		}
-		else if (IsPointOutOfCnavas_Right(pointCoord))
+	);
+};
+
+/********************* Model Mesh Transformation *********************/
+
+export function MergeMeshes(meshes : (Types.T_ModelMesh<number> | undefined)[]) : Types.T_ModelMesh<number>
+{
+	let result : Types.T_ModelMesh<number> = { edges: [], vertices: [] };
+
+	for (const mesh of meshes)
+	{
+		if (mesh)
 		{
-			if      (IsPointOutOfCanvas_Top   (pointCoord)) return (Types.E_CanvasAreas.OUT_RIGHT_TOP);
-			else if (IsPointOutOfCanvas_Bottom(pointCoord)) return (Types.E_CanvasAreas.OUT_RIGHT_BOTTOM);
-			else                                            return (Types.E_CanvasAreas.OUT_RIGHT);
+			result.edges =
+			[
+				...result.edges,
+				...mesh.edges.map((edge : Types.T_ModelMesh_Edge<number> | null) : Types.T_ModelMesh_Edge<number> | null =>
+				{
+					if (edge) return ({...edge, edge: [edge.edge[0] + result.vertices.length, edge.edge[1] + result.vertices.length]})
+					else      return (null);
+				})
+			];
+			result.vertices = [...result.vertices, ...mesh.vertices];
 		}
-		else if (IsPointOutOfCanvas_Top   (pointCoord)) return(Types.E_CanvasAreas.OUT_TOP);
-		else if (IsPointOutOfCanvas_Bottom(pointCoord)) return(Types.E_CanvasAreas.OUT_BOTTOM);
-		else                                            return(Types.E_CanvasAreas.IN);
+	}
+
+	return (result);
+};
+
+function SortLineToGetLineRestpectDeepness(vertices : Types.T_ModelMesh_Vertices) : Types.T_ModelMesh_Vertices
+{
+	return (
+		vertices.sort((vertex1 : Types.T_ModelMesh_Vertex, vertex2 : Types.T_ModelMesh_Vertex) : number =>
+		{
+			const averageZDepthLine1 : number = (vertex1[2] + vertex2[2]) * 0.5;
+			const averageZDepthLine2 : number = (vertex1[2] + vertex2[2]) * 0.5;
+		
+			if      (averageZDepthLine1 > averageZDepthLine2) return (-1);
+			else if (averageZDepthLine1 < averageZDepthLine2) return (1);
+			else                                              return (0);
+		})
+	);
+};
+
+function RemoveEdgesOutOfCanvas(
+	allModelMesh : Types.T_ModelMesh<number>,
+	canvasWidth  : number,
+	canvasHeight : number,
+) : void
+{
+	function RemoveEdgesPartOutsideOfCanvas(
+		vertex1X     : number,
+		vertex1Y     : number,
+		vertex1Z     : number,
+		vertex2X     : number,
+		vertex2Y     : number,
+		vertex2Z     : number,
+		canvasWidth  : number,
+		canvasHeight : number,
+	) : [Types.T_ModelMesh_Vertex,number] | boolean
+	{
+		function IsVertexOutOfCanvas(
+			vertexX : number,
+			vertexY : number,
+		) : Types.E_CanvasAreas
+		{
+			function IsPointOutOfCanvas_Top     (y : number) : boolean { return (y < 0           ); };
+			function IsPointOutOfCanvas_Bottom  (y : number) : boolean { return (y > canvasHeight); };
+			function IsPointOutOfCnavas_Left    (x : number) : boolean { return (x < 0           ); };
+			function IsPointOutOfCnavas_Right   (x : number) : boolean { return (x > canvasWidth ); };
+	
+			if (IsPointOutOfCnavas_Left(vertexX))
+			{
+				if      (IsPointOutOfCanvas_Top   (vertexY)) return (Types.E_CanvasAreas.OUT_LEFT_TOP);
+				else if (IsPointOutOfCanvas_Bottom(vertexY)) return (Types.E_CanvasAreas.OUT_LEFT_BOTTOM);
+				else                                         return (Types.E_CanvasAreas.OUT_LEFT);
+			}
+			else if (IsPointOutOfCnavas_Right(vertexX))
+			{
+				if      (IsPointOutOfCanvas_Top   (vertexY)) return (Types.E_CanvasAreas.OUT_RIGHT_TOP);
+				else if (IsPointOutOfCanvas_Bottom(vertexY)) return (Types.E_CanvasAreas.OUT_RIGHT_BOTTOM);
+				else                                         return (Types.E_CanvasAreas.OUT_RIGHT);
+			}
+			else if (IsPointOutOfCanvas_Top   (vertexY)) return(Types.E_CanvasAreas.OUT_TOP);
+			else if (IsPointOutOfCanvas_Bottom(vertexY)) return(Types.E_CanvasAreas.OUT_BOTTOM);
+			else                                         return(Types.E_CanvasAreas.IN);
+		};
+	
+		function GetNewLineInCanvas_Vertical(
+			vertexXOut : number,
+			vertexYOut : number,
+			vertexZOut : number,
+			vertexXIn  : number,
+			vertexYIn  : number,
+			limit      : number,
+		) : ErazLib.Graphic.Vector.Types.T_Vec3D
+		{
+			const vectorFactor : number = (limit - vertexYIn) / (vertexYOut - vertexYIn);
+	
+			return (
+				[
+					Math.floor(vertexXIn + ((vertexXOut - vertexXIn) * vectorFactor)),
+					limit,
+					vertexZOut,
+				]
+			);
+		};
+	
+		function GetNewLineInCanvas_Horizontal(
+			vertexXOut : number,
+			vertexYOut : number,
+			vertexZOut : number,
+			vertexXIn  : number,
+			vertexYIn  : number,
+			limit      : number,
+		) : ErazLib.Graphic.Vector.Types.T_Vec3D
+		{
+			const vectorFactor : number = (limit - vertexXIn) / (vertexXOut - vertexXIn);
+	
+			return (
+				[
+					limit,
+					Math.floor(vertexYIn + ((vertexYOut - vertexYIn) * vectorFactor)),
+					vertexZOut,
+				]
+			);
+		};
+	
+		function GetNewLineInCanvas_Diagonal(
+			vertexXOut      : number,
+			vertexYOut      : number,
+			vertexZOut      : number,
+			vertexXIn       : number,
+			vertexYIn       : number,
+			limitHorizontal : number,
+			limitVertical   : number,
+		) : ErazLib.Graphic.Vector.Types.T_Vec3D
+		{
+			const vectorFactor_Horizontal : number = (limitHorizontal - vertexXIn) / (vertexXOut - vertexXIn);
+			const vectorFactor_Vertical   : number = (limitVertical   - vertexYIn) / (vertexYOut - vertexYIn);
+	
+			return (
+				[
+					(vectorFactor_Horizontal > vectorFactor_Vertical) ? Math.floor(vertexXIn + ((vertexXOut - vertexXIn) * vectorFactor_Vertical))   : limitHorizontal,
+					(vectorFactor_Horizontal < vectorFactor_Vertical) ? Math.floor(vertexYIn + ((vertexYOut - vertexYIn) * vectorFactor_Horizontal)) : limitVertical,
+					vertexZOut
+				]
+			);
+		};
+	
+		const vertex1LocationRelativeToCanvas : Types.E_CanvasAreas = IsVertexOutOfCanvas(vertex1X, vertex1Y);
+		const vertex2LocationRelativeToCanvas : Types.E_CanvasAreas = IsVertexOutOfCanvas(vertex2X, vertex2Y);
+	
+		if      (vertex1LocationRelativeToCanvas !== Types.E_CanvasAreas.IN && vertex2LocationRelativeToCanvas !== Types.E_CanvasAreas.IN) return (false);
+		else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.IN && vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.IN) return (true);
+		else 
+		{
+			if      (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT        ) return ([GetNewLineInCanvas_Horizontal(vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, 0                         ), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_TOP         ) return ([GetNewLineInCanvas_Vertical  (vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, 0                         ), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT       ) return ([GetNewLineInCanvas_Horizontal(vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, canvasWidth               ), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_BOTTOM      ) return ([GetNewLineInCanvas_Vertical  (vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, canvasHeight              ), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_TOP    ) return ([GetNewLineInCanvas_Diagonal  (vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, 0           , 0           ), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_TOP   ) return ([GetNewLineInCanvas_Diagonal  (vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, canvasWidth , 0           ), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_BOTTOM) return ([GetNewLineInCanvas_Diagonal  (vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, canvasWidth , canvasHeight), 1]);
+			else if (vertex1LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_BOTTOM ) return ([GetNewLineInCanvas_Diagonal  (vertex1X, vertex1Y, vertex1Z, vertex2X, vertex2Y, 0           , canvasHeight), 1]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT        ) return ([GetNewLineInCanvas_Horizontal(vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, 0                         ), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_TOP         ) return ([GetNewLineInCanvas_Vertical  (vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, 0                         ), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT       ) return ([GetNewLineInCanvas_Horizontal(vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, canvasWidth               ), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_BOTTOM      ) return ([GetNewLineInCanvas_Vertical  (vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, canvasHeight              ), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_TOP    ) return ([GetNewLineInCanvas_Diagonal  (vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, 0           , 0           ), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_TOP   ) return ([GetNewLineInCanvas_Diagonal  (vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, canvasWidth , 0           ), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_BOTTOM) return ([GetNewLineInCanvas_Diagonal  (vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, canvasWidth , canvasHeight), 2]);
+			else if (vertex2LocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_BOTTOM ) return ([GetNewLineInCanvas_Diagonal  (vertex2X, vertex2Y, vertex2Z, vertex1X, vertex1Y, 0           , canvasHeight), 2]);
+	
+			return (true);
+		}
 	};
 
-	function GetNewLineInCanvas_Vertical(
-		pointInCanvas  : Coord.Types.T_Coord3D,
-		pointOutCanvas : Coord.Types.T_Coord3D,
-		limit          : number,
-	) : Coord.Types.T_Coord3D
+	for (let i : number = 0; i < allModelMesh.edges.length; ++i)
 	{
-		const vectorFactor : number = (limit - pointInCanvas.y) / (pointOutCanvas.y - pointInCanvas.y);
+		const edges : Types.T_ModelMesh_Edge<number> | null = allModelMesh.edges[i];
 
-		return ({ x: Math.floor(pointInCanvas.x + ((pointOutCanvas.x - pointInCanvas.x) * vectorFactor)), y: limit, z: pointOutCanvas.z });
-	};
+		if (edges)
+		{
+			const vertex1 : Types.T_ModelMesh_Vertex = allModelMesh.vertices[edges.edge[0]];
+			const vertex2 : Types.T_ModelMesh_Vertex = allModelMesh.vertices[edges.edge[1]];
 
-	function GetNewLineInCanvas_Horizontal(
-		pointInCanvas  : Coord.Types.T_Coord3D,
-		pointOutCanvas : Coord.Types.T_Coord3D,
-		limit          : number,
-	) : Coord.Types.T_Coord3D
-	{
-		const vectorFactor : number = (limit - pointInCanvas.x) / (pointOutCanvas.x - pointInCanvas.x);
+			const edgeUpdateResult : [Types.T_ModelMesh_Vertex,number] | boolean =  RemoveEdgesPartOutsideOfCanvas(
+					vertex1[0], vertex1[1], vertex1[2],
+					vertex2[0], vertex2[1], vertex2[2],
+					canvasWidth,
+					canvasHeight
+				);
 
-		return ({ x: limit, y: Math.floor(pointInCanvas.y + ((pointOutCanvas.y - pointInCanvas.y) * vectorFactor)), z: pointOutCanvas.z });
-	};
-
-	function GetNewLineInCanvas_Diagonal(
-		pointInCanvas   : Coord.Types.T_Coord3D,
-		pointOutCanvas  : Coord.Types.T_Coord3D,
-		limitHorizontal : number,
-		limitVertical   : number,
-	) : Coord.Types.T_Coord3D
-	{
-		const vectorFactor_Horizontal : number = (limitHorizontal - pointInCanvas.x) / (pointOutCanvas.x - pointInCanvas.x);
-		const vectorFactor_Vertical   : number = (limitVertical   - pointInCanvas.y) / (pointOutCanvas.y - pointInCanvas.y);
-
-		if      (vectorFactor_Horizontal < vectorFactor_Vertical) return ({ x: limitHorizontal, y: Math.floor(pointInCanvas.y + ((pointOutCanvas.y - pointInCanvas.y) * vectorFactor_Horizontal)), z: pointOutCanvas.z });
-		else if (vectorFactor_Horizontal > vectorFactor_Vertical) return ({ x: Math.floor(pointInCanvas.x + ((pointOutCanvas.x - pointInCanvas.x) * vectorFactor_Vertical)), y: limitVertical    , z: pointOutCanvas.z });
-		else                                                      return ({ x: limitHorizontal, y: limitVertical, z: pointOutCanvas.z });
-	};
-
-	const lineStartLocationRelativeToCanvas : Types.E_CanvasAreas = IsPointOutOfCanvas(line.start);
-	const lineEndLocationRelativeToCanvas   : Types.E_CanvasAreas = IsPointOutOfCanvas(line.end);
-
-	if      (lineStartLocationRelativeToCanvas !== Types.E_CanvasAreas.IN && lineEndLocationRelativeToCanvas !== Types.E_CanvasAreas.IN) return (null);
-	else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.IN && lineEndLocationRelativeToCanvas === Types.E_CanvasAreas.IN) return (line);
-	else 
-	{
-		if      (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT        ) return({ start: GetNewLineInCanvas_Horizontal(line.end, line.start, 0)                                  , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_LEFT        ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Horizontal(line.start, line.end, 0)                                   });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_TOP         ) return({ start: GetNewLineInCanvas_Vertical  (line.end, line.start, 0)                                  , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_TOP         ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Vertical  (line.start, line.end, 0)                                   });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT       ) return({ start: GetNewLineInCanvas_Horizontal(line.end, line.start, canvasSize.width)                   , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_RIGHT       ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Horizontal(line.end, line.start, canvasSize.width)                    });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_BOTTOM      ) return({ start: GetNewLineInCanvas_Vertical  (line.end, line.start, canvasSize.height)                  , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_BOTTOM      ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Vertical  (line.end, line.start, canvasSize.height)                   });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_TOP    ) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, 0, 0)                               , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_LEFT_TOP    ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, 0, 0)                                });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_TOP   ) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, canvasSize.width, 0)                , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_RIGHT_TOP   ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, canvasSize.width, 0)                 });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_RIGHT_BOTTOM) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, canvasSize.width, canvasSize.height), end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_RIGHT_BOTTOM) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, canvasSize.width, canvasSize.height) });
-		else if (lineStartLocationRelativeToCanvas === Types.E_CanvasAreas.OUT_LEFT_BOTTOM ) return({ start: GetNewLineInCanvas_Diagonal  (line.end, line.start, 0, canvasSize.height)               , end: line.end                                                                                 });
-		else if (lineEndLocationRelativeToCanvas   === Types.E_CanvasAreas.OUT_LEFT_BOTTOM ) return({ start: line.start                                                                              , end: GetNewLineInCanvas_Diagonal  (line.start, line.end, 0, canvasSize.height)                });
-		else                                                                                 return(null);
+			if (typeof edgeUpdateResult === "boolean" && !edgeUpdateResult) allModelMesh.edges[i] = null;
+			else
+			{
+				if (Array.isArray(edgeUpdateResult))
+				{
+					edges.edge[edgeUpdateResult[1] - 1] = allModelMesh.vertices.length;
+					allModelMesh.vertices.push(edgeUpdateResult[0]);
+				}
+			}
+		}
 	}
 };
 
+function ModelMeshFromWorldSpaceToDisplaySpace(
+	mesh                     : Types.T_ModelMesh<number>,
+	rotationAndScalingMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_3_3,
+	translationVector        : ErazLib.Graphic.Vector.Types.T_Vec3D,
+	cameraRaduis             : number,
+	canvasWidth              : number,
+	canvasHeight             : number,
+) : Types.T_ModelMesh<number>
+{
+	function FromWorldSpace_ToDisplaySpace(
+		vertices                 : Types.T_ModelMesh_Vertex[],
+		scalingAndRotationMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_3_3,
+		translationVector        : ErazLib.Graphic.Vector.Types.T_Vec3D,
+		cameraRadius             : number,
+		displayWidth             : number,
+		displayHeight            : number,
+	) : ErazLib.Graphic.Vector.Types.T_Vec3D[]
+	{
+		function FromWorldSpace_ToCameraSpace(
+			vertex                   : Types.T_ModelMesh_Vertex,
+			scalingAndRotationMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_3_3,
+			translationVector        : ErazLib.Graphic.Vector.Types.T_Vec3D,
+		) : void
+		{
+			ErazLib.Graphic.Matrix.Utils.Transformation_Mut(vertex, scalingAndRotationMatrix);
+			ErazLib.Graphic.Vector.Utils.Add_Mut           (vertex, translationVector       );
+		};
+
+		function FromCameraSpace_ToDisplaySpace(
+			vertex       : Types.T_ModelMesh_Vertex,
+			cameraRadius : number,
+		) : void
+		{
+			ErazLib.Graphic.Matrix.Utils.Transformation_Mut(vertex, [[0,cameraRadius,0],[0,0,cameraRadius],[cameraRadius,0,0]]);
+		};
+
+		function CenterDisplayOrigin(
+			vertex        : Types.T_ModelMesh_Vertex,
+			displayWidth  : number,
+			displayHeight : number,
+		) : void
+		{
+			vertex[0] = Math.floor(vertex[0]  + displayWidth  * .5);
+			vertex[1] = Math.floor(-vertex[1] + displayHeight * .5);
+		};
+
+		return (
+			vertices.map((vertex : Types.T_ModelMesh_Vertex) : Types.T_ModelMesh_Vertex =>
+			{
+				let result : Types.T_ModelMesh_Vertex = [...vertex];
+	
+				FromWorldSpace_ToCameraSpace  (result, scalingAndRotationMatrix, translationVector);
+				FromCameraSpace_ToDisplaySpace(result, cameraRadius                               );
+				CenterDisplayOrigin           (result, displayWidth            , displayHeight    );
+	
+				return (result);
+			})
+		);
+	};
+
+	return (
+		{
+			vertices: FromWorldSpace_ToDisplaySpace(mesh.vertices ?? [], rotationAndScalingMatrix, translationVector, cameraRaduis, canvasWidth, canvasHeight),
+			edges   : mesh.edges.map((edge : Types.T_ModelMesh_Edge<number> | null) : Types.T_ModelMesh_Edge<number> | null =>
+			{
+				return ((edge) ? { color: edge.color, edge: [...edge.edge] } : null);
+			}) ?? [],
+		}
+	);
+};
+
+/********************* Fill pixel buffer *********************/
+
 function FillPixelBuffer(
-	buffer  : Uint8ClampedArray,
-	context : CanvasRenderingContext2D,
-	coord   : Coord.Types.T_Coord2D,
-	color   : Color.RGB.Types.T_Color,
+	buffer     : Uint8ClampedArray,
+	width      : number,
+	x          : number,
+	y          : number,
+	colorRed   : number,
+	colorGreen : number,
+	colorBlue  : number,
 ): void
 {
 	// We need to multiply by 4 the all surface because each pixel is encode on a RGBA palette
-	const bufferIndex : number = (coord.x + coord.y * context.canvas.width) * 4;
+	const bufferIndex : number = (x + y * width) << 2;
 
-	if (bufferIndex >= 0 && bufferIndex <= buffer.length - 4)
-	{
-		buffer[bufferIndex + 0] = color.red;
-		buffer[bufferIndex + 1] = color.green;
-		buffer[bufferIndex + 2] = color.blue;
-		buffer[bufferIndex + 3] = 255;
-	}
+	buffer[bufferIndex    ] = colorRed;
+	buffer[bufferIndex + 1] = colorGreen;
+	buffer[bufferIndex + 2] = colorBlue;
+	buffer[bufferIndex + 3] = 255;
 };
 
 function RenderCanvasBackground(
 	buffer  : Uint8ClampedArray,
 	context : CanvasRenderingContext2D,
-	color   : Color.RGB.Types.T_Color,
+	color   : ErazLib.Graphic.Color.RGB.Types.T_Color,
 ) : void
 {
-	for (let i : number = 0; i <= context.canvas.height; ++i)
+	const canvasWidth  : number = context.canvas.width;
+	const canvasHeight : number = context.canvas.height;
+	const colorRed     : number = color.red;
+	const colorGreen   : number = color.green;
+	const colorBlue    : number = color.blue;
+
+	for (let i : number = 0; i <= canvasHeight; ++i)
 	{
-		for (let j : number = 0; j <= context.canvas.width; ++j)
-			FillPixelBuffer(buffer, context, { x: j, y: i }, color);
+		for (let j : number = 0; j <= canvasWidth; ++j)
+			FillPixelBuffer(buffer, canvasWidth, j, i, colorRed, colorGreen, colorBlue);
 	}
 };
 
-function GetLinesToRender(
-	context               : CanvasRenderingContext2D,
-	coordinateSystemBases : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[],
-	camera                : Rasterizer.PolarCamera.Types.T_PolarCamera,
-): (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[]
-{
-	function LineFromCameraSpace_ToDisplaySpace(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D>, index : number): Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null
-	{
-		if (index === 0)
-		{
-			debug += `Vertex0 ${"FromCameraSpace_ToDisplaySpace"}: ${CoordPrinting_3(FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius))}\n`;
-			debug += `Vertex0 ${"CenterDisplayOrigin"}           : ${CoordPrinting_3(CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height))}\n`;
-		}
-
-		debug += `Vertex${index + 1} ${"FromCameraSpace_ToDisplaySpace"}: ${CoordPrinting_3(FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius))}\n`
-		debug += `Vertex${index + 1} ${"CenterDisplayOrigin"}           : ${CoordPrinting_3(CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height))}\n`
-
-
-		const lineInDisplay : Line.Types.T_Line3D | null = RemoveLinePartOutsideOfCanvas(
-			{
-				start: CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.start, camera.polarCoord.radius), context.canvas.width, context.canvas.height),
-				end  : CenterDisplayOrigin(FromCameraSpace_ToDisplaySpace_Coord(line.coord.end  , camera.polarCoord.radius), context.canvas.width, context.canvas.height),
-			},
-			{
-				width : context.canvas.clientWidth,
-				height: context.canvas.clientHeight,
-			}
-		);
-		
-		if (lineInDisplay) return ({ color: line.color, coord: lineInDisplay });
-		else               return (null);
-	};
-
-	return (coordinateSystemBases.map(LineFromCameraSpace_ToDisplaySpace));
-};
-
-function RenderAllFrameLines(
-	buffer  : Uint8ClampedArray,
-	context : CanvasRenderingContext2D,
-	lines   : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[],
+function RenderLines(
+	buffer       : Uint8ClampedArray,
+	canvasWidth  : number,
+	allModelMesh : Types.T_ModelMesh<number>,
 ) : void
 {
-	function RemoveAllUnrenderedLines(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : boolean
+	function DrawLinePointsOnCanvas(
+		linePointsCoord : ErazLib.Graphic.Vector.Types.T_Vec2D[],
+		color           : ErazLib.Graphic.Color.RGB.Types.T_Color,
+	) : void
 	{
-		return (line != null);
+		const colorRed   : number = color.red;
+		const colorGreen : number = color.green;
+		const colorBlue  : number = color.blue;
+
+		linePointsCoord.map((linePointCoord : ErazLib.Graphic.Vector.Types.T_Vec2D) : void =>
+		{
+			FillPixelBuffer(buffer, canvasWidth, linePointCoord[0], linePointCoord[1], colorRed, colorGreen, colorBlue);
+		});	
 	};
 
-	function SortLineToGetLineRestpectDeepness(
-		line1 : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null,
-		line2 : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null,
-	) : number
+	for (const edges of allModelMesh.edges)
 	{
-		if (line1 && line2)
+		if (edges)
 		{
-			const averageZDepthLine1 : number = line1.coord.start.z + line1.coord.end.z;
-			const averageZDepthLine2 : number = line2.coord.start.z + line2.coord.end.z;
-
-			if      (averageZDepthLine1 > averageZDepthLine2) return (-1);
-			else if (averageZDepthLine1 < averageZDepthLine2) return (1);
-			else                                              return (0);
+			const vertex1 : Types.T_ModelMesh_Vertex = allModelMesh.vertices[edges.edge[0]];
+			const vertex2 : Types.T_ModelMesh_Vertex = allModelMesh.vertices[edges.edge[1]];
+		
+			DrawLinePointsOnCanvas(ErazLib.Graphic.Bresenham.Utils.BresenhamLinePoints(vertex1[0], vertex1[1], vertex2[0], vertex2[1]), edges.color);
 		}
-		else
-			return (0);
-	};
+	}
+};
 
-	function RenderLines(line : Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null) : void
-	{
-		function DrawLinePointsOnCanvas(
-			linePointsCoord : Coord.Types.T_Coord2D[],
-			color           : Color.RGB.Types.T_Color,
-		): void
+/********************* Other *********************/
+
+export function GenerateCoordinateBases3D(baseSize : number) : Types.T_CoordinateBases3D
+{
+	return (
 		{
-			linePointsCoord.map((linePointCoord:Coord.Types.T_Coord2D): void => { FillPixelBuffer(buffer, context, linePointCoord, color); });	
-		};
-
-		if (line)
-			DrawLinePointsOnCanvas(Line.Utils.GetLinePointsCoord(line.coord), line.color);
-	};
-
-	lines
-	.filter(RemoveAllUnrenderedLines)
-	.sort  (SortLineToGetLineRestpectDeepness)
-	.map   (RenderLines);
+			vertices :
+			[
+				[0       ,0        ,0       ],
+				[baseSize,0        ,0       ],
+				[0       ,baseSize,0        ],
+				[0       ,0        ,baseSize],
+			],
+			edges:
+			[
+				{ edge: [0,1], color: { red: 255, green:   0, blue:   0 } },
+				{ edge: [0,2], color: { red:   0, green: 255, blue:   0 } },
+				{ edge: [0,3], color: { red:   0, green:   0, blue: 255 } },
+			]
+		}
+	);
 };
 
 export function RenderFrame(
-	canvas                  : HTMLCanvasElement | undefined,
-	camera                  : Types.T_CameraState,
-	coordinateSystemBases  ?: Rasterizer.Types.T_CoordinateBases_3D,
-	mesh                   ?: Types.T_ModelMesh,
-	background             ?: Color.RGB.Types.T_Color,
+	canvas      : HTMLCanvasElement | undefined,
+	camera      : Types.T_CameraState,
+	mesh       ?: Types.T_ModelMesh<number>,
+	background ?: ErazLib.Graphic.Color.RGB.Types.T_Color,
 ) : void
 {
+	function ExtractRotateAndScaleMatrix_FromWorldToCameraMatrix(worldToCameraMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4) : ErazLib.Graphic.Matrix.Types.T_Matrix_3_3
+	{
+		return(
+			[
+				[worldToCameraMatrix[0][0],worldToCameraMatrix[0][1],worldToCameraMatrix[0][2]],
+				[worldToCameraMatrix[1][0],worldToCameraMatrix[1][1],worldToCameraMatrix[1][2]],
+				[worldToCameraMatrix[2][0],worldToCameraMatrix[2][1],worldToCameraMatrix[2][2]],
+			]
+		);
+	};
+
+	function ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4) : ErazLib.Graphic.Vector.Types.T_Vec3D
+	{
+		return ([worldToCameraMatrix[0][3],worldToCameraMatrix[1][3],worldToCameraMatrix[2][3]]);
+	};
+
 	if (canvas != null)
 	{
-		const context : CanvasRenderingContext2D|null = canvas.getContext("2d");
+		const context : CanvasRenderingContext2D | null = canvas.getContext("2d");
 		
 		if (context)
 		{
-			debug += "";
+			const canvasWidth  : number = context.canvas.width;
+			const canvasHeight : number = context.canvas.height;
+			const cameraRaduis : number = camera.polarCoord[2];
 
-			debug += "Camera: \n";
-			debug += CameraDebug(camera);
-			debug += "\n";
+			const imagedata : ImageData = context.createImageData(canvasWidth, canvasHeight);
 
-			const imagedata : ImageData = context.createImageData(context.canvas.width, context.canvas.height);
+			const cameraToWorldMatrix      : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4 = GenerateCamera_ToWorldMatrix(camera);
+			const worldToCameraMatrix      : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4 = ErazLib.Graphic.Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+			const rotationAndScalingMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_3_3 = ExtractRotateAndScaleMatrix_FromWorldToCameraMatrix(worldToCameraMatrix);
+			const translationVector        : ErazLib.Graphic.Vector.Types.T_Vec3D      = ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix);
+		
+			if  (mesh)
+			{
+				let allModelMesh : Types.T_ModelMesh<number> = ModelMeshFromWorldSpaceToDisplaySpace(mesh, rotationAndScalingMatrix, translationVector, cameraRaduis, canvasWidth, canvasHeight);
 
-			const cameraToWorldMatrix : Matrix.Types.T_Matrix_4_4 = Rasterizer.PolarCamera.Utils.GenerateCamera_ToWorldMatrix(camera);
+				RemoveEdgesOutOfCanvas           (allModelMesh, canvasWidth, canvasHeight);
+				SortLineToGetLineRestpectDeepness(allModelMesh.vertices);
+				
+				if (background)
+					RenderCanvasBackground (imagedata.data, context, background);
+	
+				RenderLines(imagedata.data, canvasWidth, allModelMesh);
+	
+				context.putImageData(imagedata, 0, 0);
+			}
 
-			debug += "cameraToWorldMatrix: \n"
-			debug += MatrixPrinting_4(cameraToWorldMatrix);
-			debug += "\n";
-
-			const worldToCameraMatrix : Matrix.Types.T_Matrix_4_4 = Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
-
-			debug += "worldToCameraMatrix: \n"
-			debug += MatrixPrinting_4(worldToCameraMatrix);
-			debug += "\n\n";
-
-			const coordinateSystemInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = FromWorldSpace_ToCameraSpace(worldToCameraMatrix, coordinateSystemBases ?? []);
-
-			debug += LinesPrintingInCamera(coordinateSystemInCameraSpace, "FromWorldSpace_ToCameraSpace");
-
-			const meshLines         : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Polygone.Utils.FromColoredPolygones_ToColoredLines(mesh ?? []);
-			const meshInCameraSpace : Line.Types.T_ColoredLine<Line.Types.T_Line3D>[] = Rasterizer.Utils.FromWorldSpace_ToCameraSpace(worldToCameraMatrix, meshLines);
-
-			const coordinateSystemLinesToRender : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[] = GetLinesToRender(context, coordinateSystemInCameraSpace, camera);
-			const meshLinesToRender             : (Line.Types.T_ColoredLine<Line.Types.T_Line3D> | null)[] = GetLinesToRender(context, meshInCameraSpace            , camera);
-			
-			console.log(coordinateSystemLinesToRender)
-
-			if (background)
-				RenderCanvasBackground (imagedata.data, context, background);
-
-			RenderAllFrameLines(imagedata.data, context, [...coordinateSystemLinesToRender, ...meshLinesToRender]);
-
-			context.putImageData(imagedata, 0, 0);
-
-			DebugPrinting();
 			UpdateCamera(camera, cameraToWorldMatrix, worldToCameraMatrix);
 		}
 	}

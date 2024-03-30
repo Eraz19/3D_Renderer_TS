@@ -1,8 +1,6 @@
-import React from "react";
+import * as React   from "react";
+import * as ErazLib from "eraz-lib";
 
-
-import * as PolarCamera from "../../../Utils/Rasterizer/PolarCamera";
-import * as Coord       from "../../../Utils/Coord";
 
 import * as RasterizerDisplay from "../index";
 
@@ -10,9 +8,25 @@ import * as Utils from "./utils";
 import * as Types from "./types";
 import      Style from "./style.module.scss";
 
+
 export function Component() : JSX.Element
 {
-	const sleepTimeout = React.useRef<NodeJS.Timeout>();
+	React.useEffect(() =>
+	{
+		const coordinateSystemSizeRelativeToCanvasHeight : number = 0.3;
+
+		if (context.canvasRef && context.camera)
+		{
+			context.coordinateSystemBases     = Utils.GenerateCoordinateBases3D(context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight);
+			context.meshToRender              = Utils.MergeMeshes([context.coordinateSystemBases, context.modelMesh]); 
+			context.coordinateSystemBasesSize = context.canvasRef.clientHeight * coordinateSystemSizeRelativeToCanvasHeight;
+			context.camera.anchor[2]          = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
+			context.camera.initialAnchor[2]   = context.canvasRef.clientHeight * (coordinateSystemSizeRelativeToCanvasHeight * 0.25);
+		}
+	}, []);
+
+	const sleepTimeout     = React.useRef<NodeJS.Timeout>();
+	const fpsDebugInterval = React.useRef<NodeJS.Timer>();
 
 	const context = React.useContext(RasterizerDisplay.RasterizerContext);
 
@@ -29,6 +43,8 @@ export function Component() : JSX.Element
 		function RemoveEvents() : void
 		{
 			observer.disconnect();
+			clearTimeout(sleepTimeout.current);
+			clearInterval(fpsDebugInterval.current)
 		};
 		
 		AddEvents(context.canvasRef);
@@ -36,7 +52,6 @@ export function Component() : JSX.Element
 		
 		return (() => { RemoveEvents(); });
 	}, []);
-
 
 	async function RenderLoop() : Promise<void>
 	{
@@ -48,14 +63,14 @@ export function Component() : JSX.Element
 		};
 
 		function IsCameraSame(
-			prevCamera ?: PolarCamera.Types.T_PolarCamera,
-			newCamera  ?: PolarCamera.Types.T_PolarCamera,
+			prevCamera ?: Types.T_PolarCamera,
+			newCamera  ?: Types.T_PolarCamera,
 		) : boolean
 		{
 			if (prevCamera && newCamera)
 			{
-				const cameraAnchorIsSame     : boolean = Coord      .Utils.IsEqual(prevCamera.anchor    , newCamera.anchor    );
-				const cameraPolarCoordIsSame : boolean = PolarCamera.Utils.IsEqual(prevCamera.polarCoord, newCamera.polarCoord);
+				const cameraAnchorIsSame     : boolean = ErazLib.Graphic.Vector.Utils.IsEqual(prevCamera.anchor    , newCamera.anchor    );
+				const cameraPolarCoordIsSame : boolean = ErazLib.Graphic.Vector.Utils.IsEqual(prevCamera.polarCoord, newCamera.polarCoord);
 		
 				return (cameraAnchorIsSame && cameraPolarCoordIsSame);
 			}
@@ -73,8 +88,8 @@ export function Component() : JSX.Element
 		};
 
 		function IsMeshSame(
-			prevMesh ?: Types.T_ModelMesh,
-			newMesh  ?: Types.T_ModelMesh,
+			prevMesh ?: Types.T_ModelMesh<number>,
+			newMesh  ?: Types.T_ModelMesh<number>,
 		) : boolean
 		{
 			return (prevMesh === newMesh);
@@ -104,7 +119,7 @@ export function Component() : JSX.Element
 					const isRerenderingBecauseOfCanvasSizeUpdate : boolean = !IsCanvasSizeSame(context.renderLoop?.canvasSizeSnapShot, { ...context.canvasSize });
 					const isRerenderingBecauseOfMeshUpdate       : boolean = !IsMeshSame      (context.renderLoop?.meshSnapShot      , context.modelMesh        );
 
-					if (isRerenderingBecauseOfCameraUpdate) context.renderLoop.cameraSnapShot =	PolarCamera.Utils.DeepCopy(context.camera);
+					if (isRerenderingBecauseOfCameraUpdate) context.renderLoop.cameraSnapShot =	Utils.PolarCameraDeepCopy(context.camera);
 					if (isRerenderingBecauseOfMeshUpdate  ) context.renderLoop.meshSnapShot   =	context.modelMesh;
 					if (isRerenderingBecauseOfCanvasSizeUpdate)
 					{
@@ -112,9 +127,8 @@ export function Component() : JSX.Element
 						ResizeCanvas(context.canvasSize);
 					}
 					
-
 					if (context.camera && (isRerenderingBecauseOfCameraUpdate || isRerenderingBecauseOfCanvasSizeUpdate || isRerenderingBecauseOfMeshUpdate))
-						Utils.RenderFrame(context.canvasRef, context.camera, context.coordinateSystemBases_3D, context.modelMesh, context.background);
+						Utils.RenderFrame(context.canvasRef, context.camera, context.meshToRender, context.background);
 				}
 
 				context.renderLoop.renderEnd = new Date();
@@ -122,19 +136,22 @@ export function Component() : JSX.Element
 				remainingSecondsInFrame      = context.renderLoop.frameTime - renderTime;
 
 				await Sleep(remainingSecondsInFrame * 1000);
+				context.renderLoop.frameCount += 1;
 			};
 		}
 	};
 
-	function BindCanvasInContext(ref : HTMLCanvasElement | null)
+	function BindCanvasInContext(ref : HTMLCanvasElement | null) : void
 	{
 		context.canvasRef = ref ?? undefined;
 	};
 
 	function HandleResize() : void
 	{
-		if (context.canvasRef)
+		if (context.canvasRef && context.camera)
+		{
 			context.canvasSize = { width: context.canvasRef.clientWidth, height: context.canvasRef.clientHeight };
+		}
 	};
 
 	return (
@@ -147,8 +164,3 @@ export function Component() : JSX.Element
 
 export * as Utils     from "./utils";
 export * as Types     from "./types";
-export * as Variables from "./variables";
-
-
-
-

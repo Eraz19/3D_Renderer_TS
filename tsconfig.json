@@ -1,26 +1,44 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "include": [
-    "src"
-  ]
+	"include"        :
+	[
+		"src/**/*.ts",
+    	"src/**/*.tsx",
+		"declaration.d.ts",
+	],
+	"exclude"        : ["node_modules"],
+	"compilerOptions":
+	{
+		"target"        : "ESNext",
+		"module"        : "commonjs",
+		"declaration"   : true,
+		"declarationMap": false,
+		"outDir"        : "dist",
+		"jsx"           : "react",
+		"sourceMap"     : false,
+		"noEmitOnError" : true,
+
+		"forceConsistentCasingInFileNames": true,
+		"allowUnreachableCode"            : false,
+		"exactOptionalPropertyTypes"      : false,
+		"noFallthroughCasesInSwitch"      : true,
+		"noImplicitThis"                  : true,
+		"noUnusedLocals"                  : true,
+		"noUnusedParameters"              : true,
+		"noImplicitAny"                   : true,
+		"noImplicitReturns"               : true,
+		"alwaysStrict"                    : true,
+		"strictBindCallApply"             : true,
+		"strictFunctionTypes"             : true,
+		"strictNullChecks"                : true,
+		"strictPropertyInitialization"    : true,
+		"downlevelIteration"              : true,
+		"strict"                          : true,
+		"skipLibCheck"                    : false,
+		"skipDefaultLibCheck"             : false,
+		"resolveJsonModule"               : true,
+		"esModuleInterop"                 : true,
+		"allowJs"                         : true,
+		"checkJs"                         : true,
+		"isolatedModules"                 : true,
+	},
 }

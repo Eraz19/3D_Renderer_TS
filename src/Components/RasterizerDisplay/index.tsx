@@ -1,32 +1,30 @@
-import * as React from "react";
+import * as React   from "react";
+import * as ErazLib from "eraz-lib";
 
 
-import * as PolarCamera from "../../Utils/Rasterizer/PolarCamera";
-import * as Color       from "../../Utils/Color";
-
-import * as UIRasterizer from "./Rasterizer";
-import * as Overlay      from "./Overlay";
-import * as Event        from "./event";
-import * as Types        from "./types";
-import      Style        from "./style.module.scss";
+import * as Rasterizer from "./Rasterizer";
+import * as Overlay    from "./Overlay";
+import * as Event      from "./event";
+import * as Types      from "./types";
+import      Style      from "./style.module.scss";
 
 
 const DEFAULT_DRAG_FACTOR   : number = 0.7;
 const DEFAULT_ROTATE_FACTOR : number = 0.3;
 const DEFAULT_ZOOM_FACTOR   : number = 0.1;
 
-const RASTERIZER_BACKGROUND_COLOR : Color.RGB.Types.T_Color = { red: 92, green: 92, blue: 92 };
+const RASTERIZER_BACKGROUND_COLOR : ErazLib.Graphic.Color.RGB.Types.T_Color = { red: 92, green: 92, blue: 92 };
 
-const NUMBER_OF_FRAME_PER_SECOND : number = 60;
+const NUMBER_OF_FRAME_PER_SECOND : number = 30;
 
-export const RasterizerContext = React.createContext<UIRasterizer.Types.T_RasterizerContext>({});
+export const RasterizerContext = React.createContext<Rasterizer.Types.T_RasterizerContext>({});
 
 
 export function Component(props : Types.T_Props) : JSX.Element
 {
-    const input   = React.useRef<Types.T_Input>                         (InitializeInput  ());
-    const event   = React.useRef<Types.T_Event>                         (IntializeEvent   ());
-    const context = React.useRef<UIRasterizer.Types.T_RasterizerContext>(InitializeContext());
+    const input   = React.useRef<Types.T_Input>                       (InitializeInput  ());
+    const event   = React.useRef<Types.T_Event>                       (IntializeEvent   ());
+    const context = React.useRef<Rasterizer.Types.T_RasterizerContext>(InitializeContext());
 
     const [isMouseDown , setIsMouseDown] = React.useState<boolean>(false);
     const [opentOverlay, setOpenOverlay] = React.useState<boolean>(false);
@@ -37,8 +35,10 @@ export function Component(props : Types.T_Props) : JSX.Element
 	React.useEffect(() => { event.current.zoomEnabled          = props.zoomSettings  ?.enabled ?? true;           }, [props.zoomSettings    ?.enabled    ]);
     React.useEffect(() => { event.current.zoomEnabled          = props.zoomSettings  ?.enabled ?? true;           }, [props.zoomSettings    ?.enabled    ]);
     React.useEffect(() =>
-    {
-        context.current.modelMesh = props.mesh; }, [props.mesh]);
+    {        
+        context.current.modelMesh    = { edges: props.mesh.edges, vertices : ResizeMeshVerticesToFitCoordinateSystem(props.mesh.vertices) };
+        context.current.meshToRender = Rasterizer.Utils.MergeMeshes([context.current.coordinateSystemBases, context.current.modelMesh]); 
+    }, [props.mesh]);
 
     React.useEffect(() =>
 	{
@@ -61,15 +61,39 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     /**************************** Utils ****************************/
 
-    function InitializeContext() : UIRasterizer.Types.T_RasterizerContext
+    function ResizeMeshVerticesToFitCoordinateSystem(meshVertices : Rasterizer.Types.T_ModelMesh_Vertices) : Rasterizer.Types.T_ModelMesh_Vertices
+    {
+        if (context.current.coordinateSystemBasesSize)
+        {
+            let factor : number = 1;
+
+            const coordinateSystemBasesSize : number = context.current.coordinateSystemBasesSize;
+            const maxVerticesX : number = Math.max(...meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[0])); }));
+            const maxVerticesY : number = Math.max(...meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[1])); }));
+            const maxVerticesZ : number = Math.max(...meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : number => { return(Math.abs(vertex[2])); }));
+            const maxValue     : number = Math.max(...[maxVerticesX, maxVerticesY, maxVerticesZ]);
+    
+            if       (maxValue > coordinateSystemBasesSize) factor = 1 / (maxValue / coordinateSystemBasesSize);
+            else if  (maxValue < coordinateSystemBasesSize) factor = coordinateSystemBasesSize / maxValue;
+    
+            return (
+                meshVertices.map((vertex : Rasterizer.Types.T_ModelMesh_Vertex) : Rasterizer.Types.T_ModelMesh_Vertex =>
+                {
+                    return ([vertex[0] * factor,vertex[2] * factor,vertex[1] * factor]);
+                })
+            );
+        }
+        else
+            return ([]);
+    };
+
+    function InitializeContext() : Rasterizer.Types.T_RasterizerContext
     {
         return (
             {
-                camera                  : InitializeCamera(),
-                coordinateSystemBases_3D: UIRasterizer.Variables.coordinateSystemBases_3D,
-                background              : RASTERIZER_BACKGROUND_COLOR,
-                renderLoop              : InitalizeRenderLoop(),
-                
+                camera    : InitializeCamera(),
+                background: RASTERIZER_BACKGROUND_COLOR,
+                renderLoop: InitalizeRenderLoop(),   
             }
         );
     };
@@ -101,16 +125,21 @@ export function Component(props : Types.T_Props) : JSX.Element
         );
     };
 
-    function InitalizeRenderLoop() : UIRasterizer.Types.T_RenderLoopState
-    {
-        return ({ frameTime : 1 / NUMBER_OF_FRAME_PER_SECOND });
-    };
-
-    function InitializeCamera() : UIRasterizer.Types.T_CameraState
+    function InitalizeRenderLoop() : Rasterizer.Types.T_RenderLoopState
     {
         return (
             {
-                ...PolarCamera.Utils.DeepCopy(props.defaultCamera),
+                frameTime : 1 / NUMBER_OF_FRAME_PER_SECOND,
+                frameCount: 0,
+            }
+        );
+    };
+
+    function InitializeCamera() : Rasterizer.Types.T_CameraState
+    {
+        return (
+            {
+                ...Rasterizer.Utils.PolarCameraDeepCopy(props.defaultCamera),
                 initialAnchor: {...props.defaultCamera.anchor},
                 initialCamera: {...props.defaultCamera.polarCoord},
             }
@@ -263,7 +292,7 @@ export function Component(props : Types.T_Props) : JSX.Element
         }
 	};
 
-    function HandleMouseDown(e : React.MouseEvent<HTMLDivElement, MouseEvent>) : void
+    function HandleMouseDown() : void
 	{
 		input.current.mouse.status = Types.E_MouseStatus.DOWN;
         setIsMouseDown(true);
@@ -314,7 +343,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 		{
 			OnDragStart();
 
-			const dragFactor : number = (props.dragSettings?.dragFactor ?? DEFAULT_DRAG_FACTOR) * (1 / (context.current.camera?.polarCoord.radius ?? 1));
+			const dragFactor : number = (props.dragSettings?.dragFactor ?? DEFAULT_DRAG_FACTOR) * (1 / (context.current.camera?.polarCoord[2] ?? 1));
 			const deltaX     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor *  mouseMoveX : dragFactor * -mouseMoveX;
 			const deltaY     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor * -mouseMoveY : dragFactor *  mouseMoveY;
 
@@ -339,7 +368,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 				if
 				(
 					props.zoomSettings.minRadius < 0 ||
-					props.zoomSettings.minRadius > props.defaultCamera.polarCoord.radius ||
+					props.zoomSettings.minRadius > props.defaultCamera.polarCoord[2] ||
 					(props.zoomSettings.maxRadius && props.zoomSettings.minRadius > props.zoomSettings.maxRadius)
 				)
 					return (undefined);
@@ -353,7 +382,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 			if (props.zoomSettings?.maxRadius == null) return (undefined);
 			else
 			{
-				if (props.zoomSettings.maxRadius < props.defaultCamera.polarCoord.radius)
+				if (props.zoomSettings.maxRadius < props.defaultCamera.polarCoord[2])
 					return (undefined);
 				else
 					return (props.zoomSettings.maxRadius);
@@ -378,7 +407,7 @@ export function Component(props : Types.T_Props) : JSX.Element
                     onMouseMove  = {HandleMouseMove}
                     onWheel      = {HandleWeel}
                 >
-                    <UIRasterizer.Component/>
+                    <Rasterizer.Component/>
                 </div>
                 {
                     opentOverlay &&
@@ -390,3 +419,5 @@ export function Component(props : Types.T_Props) : JSX.Element
         </RasterizerContext.Provider>
     );
 };
+
+export * as Rasterizer from "./Rasterizer";

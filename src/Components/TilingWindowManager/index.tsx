@@ -1,3 +1,6 @@
+import * as React from "react";
+
+
 import * as Types from "./types";
 import      Style from "./style.module.scss";
 

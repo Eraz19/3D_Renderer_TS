@@ -1,8 +1,8 @@
-import * as Polygone from "../../Utils/Shapes/Polygone";
+import * as ErazLib from "eraz-lib";
 
 
 export type T_Props =
 {
-	getMeshModel:(modelMesh:Polygone.Types.T_ColoredPolygone<Polygone.Types.T_Polygone3D>[]) => void;
-	fileExtension:"obj";
+	fileExtension : "obj";
+	getMeshModel  : (modelMesh : ErazLib.Parser.OBJ.Types.T_OBJParsingResult) => void;
 };

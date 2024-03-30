@@ -1,7 +1,7 @@
 import * as React from "react";
 
 
-import * as GlobalTypes from "../../types";
+import * as GlobalTypes from "../types";
 
 import * as Types from "./types";
 import      Style from "./style.module.scss";
