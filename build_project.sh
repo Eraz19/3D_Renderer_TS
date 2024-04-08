@@ -18,6 +18,7 @@ VERSION_MODIFIER_OPTION=(
 );
 
 FOLDER_OF_BUILD="dist";
+FOLDER_LOCAL_PACKAGE="localPackage";
 
 #! Transform an array into a string with each of the array element
 #! @param $1	array: array of element
@@ -41,17 +42,34 @@ function from_array_options_to_string_options()
 #! @param $1	package_name: name of the package that will be generated
 function generate_local_package()
 {
-    if [ -d "./dist" ]
+    if [ -d ./$FOLDER_OF_BUILD ]
     then
-        npm pack;
-        tar -xvf eraz-react-components-*.tgz;
-        rm ./eraz-react-components-*.tgz;
-        mv ./package ./localPackage;
+        rm -rf ./$FOLDER_OF_BUILD;
+        build_package;
+
+        if [ $? -eq 0 ]
+        then
+            if [ -d ./$FOLDER_LOCAL_PACKAGE ]
+            then
+                rm -rf ./$FOLDER_LOCAL_PACKAGE;
+            fi
+
+            npm pack;
+            tar -xvf eraz-react-components-*.tgz;
+            rm ./eraz-react-components-*.tgz;
+            mv ./package ./$FOLDER_LOCAL_PACKAGE;
+        fi
     else
         build_package;
 
         if [ $? -eq 0 ]
         then
+
+            if [ -d ./$FOLDER_LOCAL_PACKAGE ]
+            then
+                rm -rf ./$FOLDER_LOCAL_PACKAGE;
+            fi
+
             npm pack;
             tar -xvf eraz-react-components-*.tgz;
             rm ./eraz-react-components-*.tgz;
@@ -65,7 +83,6 @@ function generate_local_package()
 function publish_package()
 {
     #! Increment the version number for the new publish
-    #! @param $1	version_number: which number in the version number to increment ["major"|"minor"|"patch"]
     function Incerment_package_version()
     {
         local prompt_version_modification_result="";
@@ -92,8 +109,14 @@ function publish_package()
 
     if [ -d "./dist" ]
     then
-        Incerment_package_version;
-        npm publish;
+        rm -rf ./$FOLDER_OF_BUILD;
+        build_package;
+
+        if [ $? -eq 0 ]
+        then
+            Incerment_package_version;
+            npm publish;
+        fi
     else
         build_package;
 

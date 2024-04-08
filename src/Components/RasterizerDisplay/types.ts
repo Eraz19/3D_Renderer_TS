@@ -1,3 +1,6 @@
+import * as ErazLib from "eraz-lib";
+
+
 import * as UIRasterizerTypes from "./Rasterizer/types";
 
 
@@ -90,7 +93,8 @@ export type T_Props =
 	dragSettings     ?: T_DragSettings;
 	rotateSettings   ?: T_RotateSettings;
 	zoomSettings     ?: T_ZoomSetting;
-	keyboardSettings ?: T_KeyboardSettings,
+	keyboardSettings ?: T_KeyboardSettings;
+	background       ?: ErazLib.Graphic.Color.RGB.Types.T_Color;
 	onStartDrag      ?: () => void;
     onEndDrag        ?: () => void;
 	onStartRotate    ?: () => void;

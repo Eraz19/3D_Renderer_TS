@@ -119,8 +119,8 @@ export function Component() : JSX.Element
 					const isRerenderingBecauseOfCanvasSizeUpdate : boolean = !IsCanvasSizeSame(context.renderLoop?.canvasSizeSnapShot, { ...context.canvasSize });
 					const isRerenderingBecauseOfMeshUpdate       : boolean = !IsMeshSame      (context.renderLoop?.meshSnapShot      , context.modelMesh        );
 
-					if (isRerenderingBecauseOfCameraUpdate) context.renderLoop.cameraSnapShot =	Utils.PolarCameraDeepCopy(context.camera);
-					if (isRerenderingBecauseOfMeshUpdate  ) context.renderLoop.meshSnapShot   =	context.modelMesh;
+					if (isRerenderingBecauseOfCameraUpdate    ) context.renderLoop.cameraSnapShot =	Utils.PolarCameraDeepCopy(context.camera);
+					if (isRerenderingBecauseOfMeshUpdate      ) context.renderLoop.meshSnapShot   =	context.modelMesh;
 					if (isRerenderingBecauseOfCanvasSizeUpdate)
 					{
 						context.renderLoop.canvasSizeSnapShot = { ...context.canvasSize };

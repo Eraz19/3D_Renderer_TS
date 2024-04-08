@@ -92,7 +92,7 @@ export function Component(props : Types.T_Props) : JSX.Element
         return (
             {
                 camera    : InitializeCamera(),
-                background: RASTERIZER_BACKGROUND_COLOR,
+                background: props.background ?? RASTERIZER_BACKGROUND_COLOR,
                 renderLoop: InitalizeRenderLoop(),   
             }
         );
@@ -274,6 +274,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 		{
 			event.current.action = Types.E_RasterizerAction.NONE;
 			ReportCameraUpdate();
+
 		}
     };
 
@@ -400,12 +401,12 @@ export function Component(props : Types.T_Props) : JSX.Element
         <RasterizerContext.Provider value={context.current}>
             <div className={Style.Container}>
                 <div
-                    className    = {`${Style.Rasterizer} ${MouseDown_ToClassName()}`}
-                    onMouseLeave = {HandleMouseUp}
-                    onMouseUp    = {HandleMouseUp}
-                    onMouseDown  = {HandleMouseDown}
-                    onMouseMove  = {HandleMouseMove}
-                    onWheel      = {HandleWeel}
+                    className          = {`${Style.Rasterizer} ${MouseDown_ToClassName()}`}
+                    onMouseLeave       = {HandleMouseUp}
+                    onMouseUpCapture   = {HandleMouseUp}
+                    onMouseDownCapture = {HandleMouseDown}
+                    onMouseMove        = {HandleMouseMove}
+                    onWheel            = {HandleWeel}
                 >
                     <Rasterizer.Component/>
                 </div>
