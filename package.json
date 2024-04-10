@@ -1,6 +1,6 @@
 {
 	"name": "eraz-react-components",
-	"version": "0.1.10",
+	"version": "0.1.11",
 	"author": "Alexander Douieb",
 	"description": "This is a React component library for projects",
 	"main": "dist/index.js",
