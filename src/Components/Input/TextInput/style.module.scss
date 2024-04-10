@@ -1,0 +1,246 @@
+$label-side                       : var(--label-side                     , start                     );
+$label-padding-vertical           : var(--label-padding-vertical         , 3px                       );
+$label-padding-horizontal         : var(--label-padding-horizontal       , 8px                       );
+$label-color                      : var(--label-color                    , #3174ad                 );  
+$label-font-size                  : var(--label-font-size                , 13px                      );
+$label-font-weight                : var(--label-font-weight              , 400                       );
+$hover-label-color                : var(--hover-label-color              , $label-color              );
+$hover-label-font-size            : var(--hover-label-font-size          , $label-font-size          );
+$hover-label-font-weight          : var(--hover-label-font-weight        , $label-font-weight        );
+$focus-label-color                : var(--focus-label-color              , $label-color              );
+$focus-label-font-size            : var(--focus-label-font-size          , $label-font-size          );
+$focus-label-font-weight          : var(--focus-label-font-weight        , $label-font-weight        );
+$invalid-label-color              : var(--invalid-label-color            , #fc0303                 );
+$invalid-label-font-size          : var(--invalid-label-font-size        , $label-font-size          );
+$invalid-label-font-weight        : var(--invalid-label-font-weight      , $label-font-weight        );
+$invalid-hover-label-color        : var(--invalid-hover-label-color      , $invalid-label-color      );
+$invalid-hover-label-font-size    : var(--invalid-hover-label-font-size  , $invalid-label-font-size  );
+$invalid-hover-label-font-weight  : var(--invalid-hover-label-font-weight, $invalid-label-font-weight);
+$invalid-focus-label-color        : var(--invalid-focus-label-color      , $invalid-label-color      );
+$invalid-focus-label-font-size    : var(--invalid-focus-label-font-size  , $invalid-label-font-size  );
+$invalid-focus-label-font-weight  : var(--invalid-focus-label-font-weight, $invalid-label-font-weight);
+
+$input-padding-vertical           : var(--input-padding-vertical          , 5px                        );
+$input-padding-horizontal         : var(--input-padding-horizontal        , 8px                       );
+$input-color                      : var(--input-color                     , #3174ad                  );
+$input-font-size                  : var(--input-font-size                 , 16px                       );
+$input-font-weight                : var(--input-font-weight               , 400                        );
+$caret-color                      : var(--caret-color                     , $input-color               );
+$input-border-color               : var(--input-border-color              , $input-color               );
+$input-border-width               : var(--input-border-width              , 1px                        );
+$input-border-radius              : var(--input-border-radius             , 0px                        );
+$input-background                 : var(--input-background                , none                       );
+$hover-input-color                : var(--hover-input-color               , $input-color               );
+$hover-input-font-size            : var(--hover-input-font-size           , $input-font-size           );
+$hover-input-font-weight          : var(--hover-input-font-weight         , $input-font-weight         );
+$hover-caret-color                : var(--hover-caret-color               , $caret-color               );
+$hover-input-border-color         : var(--hover-input-border-color        , $input-border-color        );
+$hover-input-border-width         : var(--hover-input-border-width        , $input-border-width        );
+$hover-input-background           : var(--hover-input-background          , $input-background          );
+$focus-input-color                : var(--focus-input-color               , $input-color               );
+$focus-input-font-size            : var(--focus-input-font-size           , $input-font-size           );
+$focus-input-font-weight          : var(--focus-input-font-weight         , $input-font-weight         );
+$focus-caret-color                : var(--focus-caret-color               , $input-color               );
+$focus-input-border-color         : var(--focus-input-border-color        , $input-border-color        );
+$focus-input-border-width         : var(--focus-input-border-width        , $input-border-width        );
+$focus-input-background           : var(--focus-input-background          , $input-background          );
+$invalid-input-color              : var(--invalid-input-color             , #fc0303                  );
+$invalid-input-font-size          : var(--invalid-input-font-size         , $input-font-size           );
+$invalid-input-font-weight        : var(--invalid-input-font-weight       , $input-font-weight         );
+$invalid-caret-color              : var(--invalid-caret-color             , $invalid-input-color       );
+$invalid-input-border-color       : var(--invalid-input-border-color      , $invalid-input-color       );
+$invalid-input-border-width       : var(--invalid-input-border-width      , $input-border-width        );
+$invalid-input-background         : var(--invalid-input-background        , $input-background          );
+$invalid-hover-input-color        : var(--invalid-hover-input-color       , $invalid-input-color       );
+$invalid-hover-input-font-weight  : var(--invalid-hover-input-font-weight , $invalid-input-font-weight );
+$invalid-hover-input-font-size    : var(--invalid-hover-input-font-size   , $invalid-input-font-size   );
+$invalid-hover-caret-color        : var(--invalid-hover-caret-color       , $invalid-caret-color       );
+$invalid-hover-input-border-color : var(--invalid-hover-input-border-color, $invalid-input-border-color);
+$invalid-hover-input-border-width : var(--invalid-hover-input-border-width, $invalid-input-border-width);
+$invalid-hover-input-background   : var(--invalid-hover-input-background  , $invalid-input-background  );
+$invalid-focus-input-color        : var(--invalid-focus-input-color       , $invalid-input-color       );
+$invalid-focus-input-font-size    : var(--invalid-focus-input-font-size   , $invalid-input-font-size   );
+$invalid-focus-input-font-weight  : var(--invalid-focus-input-font-weight , $invalid-input-font-weight );
+$invalid-focus-caret-color        : var(--invalid-focus-caret-color       , $invalid-caret-color       );
+$invalid-focus-input-border-color : var(--invalid-focus-input-border-color, $invalid-input-border-color);
+$invalid-focus-input-border-width : var(--invalid-focus-input-border-width, $input-border-width        );
+$invalid-focus-input-background   : var(--invalid-focus-input-background  , $invalid-input-background  );
+
+$error-message-padding-vertical   : var(--error-message-padding-vertical  , 3px                       );
+$error-message-padding-horizontal : var(--error-message-padding-horizontal, 5px                       );
+$error-message-color              : var(--error-message-color             , #fc0303                 );
+$error-message-font-size          : var(--error-message-font-size         , 11px                      );
+$error-message-font-weight        : var(--error-message-font-weight       , 400                       );
+$hover-error-message-color        : var(--hover-error-message-color       , $error-message-color      );
+$hover-error-message-font-size    : var(--hover-error-message-font-size   , $error-message-font-size  );
+$hover-error-message-font-weight  : var(--hover-error-message-font-weight , $error-message-font-weight);
+$focus-error-message-color        : var(--focus-error-message-color       , $error-message-color      );
+$focus-error-message-font-size    : var(--focus-error-message-font-size   , $error-message-font-size  );
+$focus-error-message-font-weight  : var(--focus-error-message-font-weight , $error-message-font-weight);
+
+
+.Container
+{
+    position       : relative; 
+    display        : flex;
+    flex-direction : column;
+    width          : 100%;
+
+    & > .Label
+    {
+        justify-content : $label-side;
+        padding         : $label-padding-vertical $label-padding-horizontal;
+        color           : $label-color;
+        font-size       : $label-font-size;
+        font-weight     : $label-font-weight;
+
+        width      : 100%;
+        display    : flex;
+        box-sizing : border-box;
+
+        &.Focus
+        {
+            color       : $focus-label-color;  
+            font-size   : $focus-label-font-size;  
+            font-weight : $focus-label-font-weight; 
+        };
+        &.Invalid
+        {
+            color       : $invalid-label-color;  
+            font-size   : $invalid-label-font-size;  
+            font-weight : $invalid-label-font-weight;  
+        };
+        &.Invalid.Focus
+        {
+            color       : $invalid-focus-label-color;  
+            font-size   : $invalid-focus-label-font-size;  
+            font-weight : $invalid-focus-label-font-weight;  
+        };
+    };
+
+    & > .Input
+    {
+        padding       : $input-padding-vertical $input-padding-horizontal;
+        color         : $input-color;
+        font-size     : $input-font-size;
+        font-weight   : $input-font-weight;
+        caret-color   : $caret-color;
+        border        : $input-border-color solid $input-border-width;
+        border-radius : $input-border-radius;
+        background    : $input-background;
+
+        width      : 100%;
+        box-sizing : border-box;
+
+        &:active { outline : none; };
+        &:focus  { outline : none; };
+
+        &.Focus
+        {
+            color       : $focus-input-color;
+            font-size   : $focus-input-font-size;
+            font-weight : $focus-input-font-weight;
+            caret-color : $focus-caret-color; 
+            border      : $focus-input-border-color solid $focus-input-border-width;
+            background  : $focus-input-background;
+        };
+        &.Invalid
+        {
+            color       : $invalid-input-color;
+            font-size   : $invalid-input-font-size;
+            font-weight : $invalid-input-font-weight;
+            caret-color : $invalid-caret-color;
+            border      : $invalid-input-border-color solid $invalid-input-border-width;
+            background  : $invalid-input-background;
+        };
+        &.Invalid.Focus
+        {
+            color       : $invalid-focus-input-color;
+            font-size   : $invalid-focus-input-font-size;
+            font-weight : $invalid-focus-input-font-weight;
+            caret-color : $invalid-focus-caret-color;
+            border      : $invalid-focus-input-border-color solid $invalid-focus-input-border-width;
+            background  : $invalid-focus-input-background;
+        };
+    };
+
+    & > .ErrorMessage
+    {
+        padding     : $error-message-padding-vertical $error-message-padding-horizontal;
+        color       : $error-message-color;
+        font-size   : $error-message-font-size;   
+        font-weight : $error-message-font-weight;  
+        
+        width       : 100%;
+        box-sizing  : border-box;
+        position    : absolute;
+        bottom      : -20px;
+        white-space : nowrap;
+
+        &.Focus
+        {
+            color       : $focus-error-message-color;
+            font-size   : $focus-error-message-font-size;   
+            font-weight : $focus-error-message-font-weight; 
+        };
+    };
+
+    &:hover
+    {
+        & > .Label
+        {
+            color       : $hover-label-color;
+            font-size   : $hover-label-font-size;
+            font-weight : $hover-label-font-weight;
+
+            &.Invalid
+            {
+                color       : $invalid-hover-label-color;  
+                font-size   : $invalid-hover-label-font-size;  
+                font-weight : $invalid-hover-label-font-weight;  
+            };
+            &.Invalid.Focus
+            {
+                color       : $invalid-focus-label-color;  
+                font-size   : $invalid-focus-label-font-size;  
+                font-weight : $invalid-focus-label-font-weight;  
+            };
+        };
+
+        & > .Input
+        {
+            color       : $hover-input-color;
+            font-size   : $hover-input-font-size;
+            font-weight : $hover-input-font-weight;
+            caret-color : $hover-caret-color;
+            border      : $hover-input-border-color solid $hover-input-border-width;
+            background  : $hover-input-background;
+
+            &.Invalid
+            {
+                color       : $invalid-hover-input-color;
+                font-size   : $invalid-hover-input-font-size;
+                font-weight : $invalid-hover-input-font-weight;
+                caret-color : $invalid-hover-caret-color;
+                border      : $invalid-hover-input-border-color solid $invalid-hover-input-border-width;
+                background  : $invalid-hover-input-background;
+            };
+            &.Invalid.Focus
+            {
+                color       : $invalid-focus-input-color;
+                font-size   : $invalid-focus-input-font-size;
+                font-weight : $invalid-focus-input-font-weight;
+                caret-color : $invalid-focus-caret-color;
+                border      : $invalid-focus-input-border-color solid $invalid-focus-input-border-width;
+                background  : $invalid-focus-input-background;
+            };
+        };
+
+        & > .ErrorMessage
+        {
+            color       : $hover-error-message-color;
+            font-size   : $hover-error-message-font-size;   
+            font-weight : $hover-error-message-font-weight; 
+        };
+    };
+};

@@ -1,0 +1,83 @@
+$button-padding-horizontal          : var(--button-padding-horizontal         , 10px                              );
+$button-padding-vertical            : var(--button-padding-vertical           , 5px                               );
+$button-border-radius               : var(--button-border-radius              , 2px                               );
+$button-color                       : var(--button-color                      , #ffffff                         );
+$button-background                  : var(--button-background                 , #3174ad                         );
+$button-font-size                   : var(--button-font-size                  , 16px                              );
+$button-font-weight                 : var(--button-font-weight                , 400                               );
+$hover-button-color                 : var(--hover-button-color                , $button-color                     );
+$hover-button-background            : var(--hover-button-background           , $button-background                );
+$hover-button-font-size             : var(--hover-button-font-size            , $button-font-size                 );
+$hover-button-font-weight           : var(--hover-button-font-weight          , $button-font-weight               );
+$active-button-color                : var(--active-button-color               , $hover-button-color               );
+$active-button-background           : var(--active-button-background          , $hover-button-background          );
+$active-button-font-size            : var(--active-button-font-size           , $hover-button-font-size           );
+$active-button-font-weight          : var(--active-button-font-weight         , $hover-button-font-weight         );
+$disabled-button-color              : var(--disabled-button-color             , #eeeeee                         );
+$disabled-button-background         : var(--disabled-button-background        , #888888                         );
+$disabled-button-font-size          : var(--disabled-button-font-size         , $button-font-size                 );
+$disabled-button-font-weight        : var(--disabled-button-font-weight       , $button-font-weight               );
+$hover-disabled-button-color        : var(--hover-disabled-button-color       , $disabled-button-color            );
+$hover-disabled-button-background   : var(--hover-disabled-button-background  , $disabled-button-background       );
+$hover-disabled-button-font-size    : var(--hover-disabled-button-font-size   , $disabled-button-font-size        );
+$hover-disabled-button-font-weight  : var(--hover-disabled-button-font-weight , $disabled-button-font-weight      );
+$active-disabled-button-color       : var(--active-disabled-button-color      , $hover-disabled-button-color      );
+$active-disabled-button-background  : var(--active-disabled-button-background , $hover-disabled-button-background );
+$active-disabled-button-font-size   : var(--active-disabled-button-font-size  , $hover-disabled-button-font-size  );
+$active-disabled-button-font-weight : var(--active-disabled-button-font-weight, $hover-disabled-button-font-weight);
+
+
+.Button
+{
+    padding       : $button-padding-vertical $button-padding-horizontal;
+    border-radius : $button-border-radius;
+    color         : $button-color;
+    background    : $button-background;
+    font-size     : $button-font-size;
+    font-weight   : $button-font-weight;
+
+    cursor          : pointer;
+    box-shadow      : rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+    user-select     : none;
+    display         : flex;
+    justify-content : center;
+    align-items     : center;
+    
+    &:hover
+    {
+        color       : $hover-button-color; 
+        background  : $hover-button-background; 
+        font-size   : $hover-button-font-size; 
+        font-weight : $hover-button-font-weight; 
+    };
+    &:active
+    {
+        color       : $active-button-color;
+        background  : $active-button-background;
+        font-size   : $active-button-font-size;
+        font-weight : $active-button-font-weight;
+    };
+
+    &.Disabled
+    {
+        color       : $disabled-button-color;
+        background  : $disabled-button-background;
+        font-size   : $disabled-button-font-size;
+        font-weight : $disabled-button-font-weight;
+        
+        &:hover
+        {
+            color       : $hover-disabled-button-color; 
+            background  : $hover-disabled-button-background; 
+            font-size   : $hover-disabled-button-font-size; 
+            font-weight : $hover-disabled-button-font-weight;
+        };
+        &:active
+        {
+            color       : $active-disabled-button-color;
+            background  : $active-disabled-button-background;
+            font-size   : $active-disabled-button-font-size;
+            font-weight : $active-disabled-button-font-weight;
+        };
+    };
+};
