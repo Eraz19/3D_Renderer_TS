@@ -99,5 +99,5 @@ export type T_Props =
     onEndDrag        ?: () => void;
 	onStartRotate    ?: () => void;
     onEndRotate      ?: () => void;
-	cameraDebug      ?: React.Dispatch<React.SetStateAction<UIRasterizerTypes.T_CameraState | undefined>>;
+	cameraDebug      ?: (polarCamera : UIRasterizerTypes.T_PolarCamera) => void;
 };

@@ -55,7 +55,10 @@ export function Component(props : Types.T_Props) : JSX.Element
 		};
 		
 		AddEvents();
-		
+
+        if (props.cameraDebug && context.current.camera)
+		    props.cameraDebug({ anchor: context.current.camera.anchor, polarCoord: context.current.camera.polarCoord });
+        
 		return (RemoveEvents);
 	}, []);
 
@@ -140,7 +143,7 @@ export function Component(props : Types.T_Props) : JSX.Element
         return (
             {
                 ...Rasterizer.Utils.PolarCameraDeepCopy(props.defaultCamera),
-                initialAnchor: {...props.defaultCamera.anchor},
+                initialAnchor: [...props.defaultCamera.anchor],
                 initialCamera: {...props.defaultCamera.polarCoord},
             }
         );
@@ -196,7 +199,7 @@ export function Component(props : Types.T_Props) : JSX.Element
 	function ResetAnchorPosition() : void
 	{
         if (context.current.camera)
-            context.current.camera.anchor = { ...context.current.camera.initialAnchor };
+            context.current.camera.anchor = [...context.current.camera.initialAnchor];
 	};
 
 	function ResetCamera() : void
@@ -205,18 +208,11 @@ export function Component(props : Types.T_Props) : JSX.Element
             context.current.camera.polarCoord = { ...context.current.camera.initialCamera };
 	};
 
-    function ReportCameraUpdate() : void
-	{
-		if (props.cameraDebug) 
-			props.cameraDebug(context.current.camera);
-	};
-
 	function OnDragStart() : void
     {
         if (event.current.action !== Types.E_RasterizerAction.DRAG)
         {
             event.current.action = Types.E_RasterizerAction.DRAG;
-			ReportCameraUpdate();
 
             if (props.onStartDrag)
                 props.onStartDrag();
@@ -228,7 +224,6 @@ export function Component(props : Types.T_Props) : JSX.Element
         if (event.current.action === Types.E_RasterizerAction.DRAG)
 		{
 			event.current.action = Types.E_RasterizerAction.NONE;
-			ReportCameraUpdate();
 
 			if (props.onEndDrag)
 				props.onEndDrag();
@@ -240,7 +235,6 @@ export function Component(props : Types.T_Props) : JSX.Element
         if (event.current.action !== Types.E_RasterizerAction.ROTATE)
         {
             event.current.action = Types.E_RasterizerAction.ROTATE;
-			ReportCameraUpdate();
 
             if (props.onStartRotate)
                 props.onStartRotate();
@@ -252,29 +246,9 @@ export function Component(props : Types.T_Props) : JSX.Element
         if (event.current.action === Types.E_RasterizerAction.ROTATE)
 		{
 			event.current.action = Types.E_RasterizerAction.NONE;
-			ReportCameraUpdate();
 
 			if (props.onEndRotate)
 				props.onEndRotate();
-		}
-    };
-
-	function OnZoomStart() : void
-    {
-        if (event.current.action !== Types.E_RasterizerAction.ZOOM)
-        {
-            event.current.action = Types.E_RasterizerAction.ZOOM;
-			ReportCameraUpdate();
-        }
-    };
-
-    function OnZoomEnd() : void
-    {
-        if (event.current.action === Types.E_RasterizerAction.ZOOM)
-		{
-			event.current.action = Types.E_RasterizerAction.NONE;
-			ReportCameraUpdate();
-
 		}
     };
 
@@ -289,7 +263,6 @@ export function Component(props : Types.T_Props) : JSX.Element
         {
             OnDragEnd  ();
             OnRotateEnd();
-			OnZoomEnd  ();
         }
 	};
 
@@ -333,8 +306,11 @@ export function Component(props : Types.T_Props) : JSX.Element
 			const deltaTheta   : number = (props.rotateSettings?.rotateMode === Types.E_CameraMode.INVERSE) ? rotateFactor *  mouseMoveX : rotateFactor * -mouseMoveX;
 			const deltaPhi     : number = (props.rotateSettings?.rotateMode === Types.E_CameraMode.INVERSE) ? rotateFactor * -mouseMoveY : rotateFactor *  mouseMoveY;
 
-			if (context.current.camera && Event.RotateCamera(deltaTheta, deltaPhi, context.current.camera, props.cameraDebug))
+			if (context.current.camera && Event.RotateCamera(deltaTheta, deltaPhi, context.current.camera) && props.cameraDebug)
+            {
 				OnRotateStart();
+                props.cameraDebug({ anchor: context.current.camera.anchor, polarCoord: context.current.camera.polarCoord });
+            }
 		};
 
 		function DragAnchor(
@@ -348,8 +324,11 @@ export function Component(props : Types.T_Props) : JSX.Element
 			const deltaX     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor *  mouseMoveX : dragFactor * -mouseMoveX;
 			const deltaY     : number = (props.dragSettings?.dragMode === Types.E_CameraMode.INVERSE) ? dragFactor * -mouseMoveY : dragFactor *  mouseMoveY;
 
-            if (context.current.camera)
-                Event.DragCamera(deltaX, deltaY, context.current.camera, props.cameraDebug);
+            if (context.current.camera && props.cameraDebug)
+            {
+                Event.DragCamera(deltaX, deltaY, context.current.camera, );
+                props.cameraDebug({ anchor: context.current.camera.anchor, polarCoord: context.current.camera.polarCoord });
+            }
 		}
 
 		if (input.current.mouse.status === Types.E_MouseStatus.DOWN)
@@ -393,8 +372,11 @@ export function Component(props : Types.T_Props) : JSX.Element
 		const userZoomFactor : number = props.zoomSettings?.zoomFactor ?? DEFAULT_ZOOM_FACTOR;
 		const zoomFactor     : number = (e.deltaY > 0) ? userZoomFactor : -userZoomFactor;
 
-		if (context.current.camera && event.current.zoomEnabled && Event.ZoomCamera(zoomFactor, context.current.camera, GetMinZoom(), GetMaxZoom(), props.cameraDebug))
-			OnZoomStart();
+		if (context.current.camera && event.current.zoomEnabled && props.cameraDebug)
+        {
+            Event.ZoomCamera(zoomFactor, context.current.camera, GetMinZoom(), GetMaxZoom())
+            props.cameraDebug({ anchor: context.current.camera.anchor, polarCoord: context.current.camera.polarCoord });
+        }
 	};
 
     return (

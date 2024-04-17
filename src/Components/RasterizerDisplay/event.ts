@@ -1,4 +1,3 @@
-import * as React   from "react";
 import * as ErazLib from "eraz-lib";
 
 
@@ -6,11 +5,10 @@ import * as Rasterizer from "./Rasterizer";
 
 
 export function ZoomCamera(
-	zoomFactor       : number,
-	camera           : Rasterizer.Types.T_CameraState,
-	minZoom          : number = 0,
-	maxZoom         ?: number,
-	setCameraDebug  ?: React.Dispatch<React.SetStateAction<Rasterizer.Types.T_CameraState | undefined>>,
+	zoomFactor  : number,
+	camera      : Rasterizer.Types.T_CameraState,
+	minZoom     : number = 0,
+	maxZoom    ?: number,
 ) : boolean
 {
 	const newRadius : number = camera.polarCoord[2] + zoomFactor;
@@ -18,16 +16,7 @@ export function ZoomCamera(
 	if ((minZoom && newRadius > minZoom) && (maxZoom && newRadius < maxZoom))
 	{
 		camera.polarCoord[2] = newRadius;
-		
-		if (setCameraDebug)
-		{
-			setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
-			{
-				if (prev) return ({...prev, polarCoord: [prev.polarCoord[0],prev.polarCoord[1],newRadius] });
-				else      return (undefined);
-			});
-		}
-
+	
 		return (true);
 	}
 
@@ -35,10 +24,9 @@ export function ZoomCamera(
 };
 
 export function RotateCamera(
-	deltaTheta      : number,
-	deltaPhi        : number,
-	camera          : Rasterizer.Types.T_CameraState,
-	setCameraDebug ?: React.Dispatch<React.SetStateAction<Rasterizer.Types.T_CameraState | undefined>>,
+	deltaTheta : number,
+	deltaPhi   : number,
+	camera     : Rasterizer.Types.T_CameraState,
 ) : boolean
 {
 	function ModifyThetaAngle() : boolean
@@ -46,15 +34,6 @@ export function RotateCamera(
 		const newThetaAngle : number = ((camera.polarCoord[1] + deltaTheta % 360) + 360) % 360;
 
 		camera.polarCoord[1] = newThetaAngle;
-
-		if (setCameraDebug)
-		{
-			setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
-			{
-				if (prev) return ({...prev, polarCoord: [prev.polarCoord[0],newThetaAngle,prev.polarCoord[2]] });
-				else      return (undefined);
-			});
-		}
 
 		return (true);
 	};
@@ -66,15 +45,6 @@ export function RotateCamera(
 		if (newPhiAngle < 89 && newPhiAngle > -89)
 		{
 			camera.polarCoord[0] = newPhiAngle;
-
-			if (setCameraDebug)
-			{
-				setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
-				{
-					if (prev) return ({...prev, polarCoord: [newPhiAngle,prev.polarCoord[1],prev.polarCoord[2]] });
-					else      return (undefined);
-				});
-			}
 
 			return (true);
 		}
@@ -94,10 +64,9 @@ export function RotateCamera(
 };
 
 export function DragCamera(
-	deltaX          : number,
-	deltaY          : number,
-	camera          : Rasterizer.Types.T_CameraState,
-	setCameraDebug ?: React.Dispatch<React.SetStateAction<Rasterizer.Types.T_CameraState | undefined>>,
+	deltaX : number,
+	deltaY : number,
+	camera : Rasterizer.Types.T_CameraState,
 ) : void
 {
 	if (camera.cameraToSideVector && camera.cameraToTopVector)
@@ -112,14 +81,5 @@ export function DragCamera(
 			);
 
 		camera.anchor = addCameraToTopVectorToAnchorCoord;
-
-		if (setCameraDebug)
-		{
-			setCameraDebug((prev : Rasterizer.Types.T_CameraState | undefined) : Rasterizer.Types.T_CameraState | undefined =>
-			{
-				if (prev) return ({...prev, anchor: addCameraToTopVectorToAnchorCoord });
-				else      return (undefined);
-			});
-		}
 	}
 };

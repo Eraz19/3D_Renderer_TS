@@ -107,5 +107,6 @@ export type T_Props =
     icon         ?: JSX.Element;
     label        ?: string;
     errorMessage ?: string;
+    isValid      ?: boolean;
     style        ?: T_Style;
 };

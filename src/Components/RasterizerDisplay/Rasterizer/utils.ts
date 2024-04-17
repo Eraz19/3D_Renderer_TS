@@ -488,6 +488,7 @@ export function RenderFrame(
 
 			const cameraToWorldMatrix      : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4 = GenerateCamera_ToWorldMatrix(camera);
 			const worldToCameraMatrix      : ErazLib.Graphic.Matrix.Types.T_Matrix_4_4 = ErazLib.Graphic.Matrix.Utils.InverseMatrix(cameraToWorldMatrix, 4);
+			
 			const rotationAndScalingMatrix : ErazLib.Graphic.Matrix.Types.T_Matrix_3_3 = ExtractRotateAndScaleMatrix_FromWorldToCameraMatrix(worldToCameraMatrix);
 			const translationVector        : ErazLib.Graphic.Vector.Types.T_Vec3D      = ExtractTranslateVector_FromWorldToCameraMatrix(worldToCameraMatrix);
 		

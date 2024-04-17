@@ -12,9 +12,9 @@ export function Component(props : Types.T_Props) : JSX.Element
 
     React.useEffect(() =>
     {
-        if (props.errorMessage) setIsValid(false);
-        else                    setIsValid(true);
-    }, [props.errorMessage]);
+        if (props.isValid) setIsValid(false);
+        else               setIsValid(true);
+    }, [props.isValid]);
 
     return (
         <div className={Style.Container}>
@@ -144,3 +144,4 @@ export function Component(props : Types.T_Props) : JSX.Element
 };
 
 export * as Types from "./type";
+export * as Utils from "./utils";
